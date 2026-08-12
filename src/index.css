@@ -1,0 +1,236 @@
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Variables - Keep only essentials */
+:root {
+  --font-primary: 'EB Garamond', 'Times New Roman', 'Georgia', serif;
+  --font-secondary: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-ui: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* Brand Colors */
+  --brand-primary: #001f54;
+  --brand-primary-hover: #002a6b;
+  --oxford-blue: #002855;
+  --oxford-blue-2: #001845;
+  --true-blue: #0466c8;
+  --sapphire: #0353a4;
+
+  /* Fluid type scale: interpolates between a 375px and a 1440px viewport.
+     Mirrors the fontSize tokens in tailwind.config.js. */
+  --text-page-title: clamp(2.25rem, 1.942rem + 1.31vw, 3.125rem);   /* 36 -> 50 */
+  --text-section-title: clamp(1.75rem, 1.486rem + 1.13vw, 2.5rem);  /* 28 -> 40 */
+  --text-subsection: clamp(1.375rem, 1.243rem + 0.56vw, 1.75rem);   /* 22 -> 28 */
+  --text-body: clamp(1rem, 0.956rem + 0.19vw, 1.125rem);            /* 16 -> 18 */
+  --text-body-lg: clamp(1.125rem, 1.037rem + 0.38vw, 1.375rem);     /* 18 -> 22 */
+  --text-caption: clamp(0.875rem, 0.831rem + 0.19vw, 1rem);         /* 14 -> 16 */
+
+  /* Ambient background grid, tinted toward oxford blue */
+  --grid-line: rgba(0, 40, 85, 0.07);
+
+  /* Gradient for accented words inside headings */
+  --heading-accent-from: #0353a4;
+  --heading-accent-to: #001f54;
+}
+
+.dark {
+  --grid-line: rgba(150, 180, 235, 0.06);
+  /* Lifted so the tail of the gradient stays legible on black */
+  --heading-accent-from: #7db1f2;
+  --heading-accent-to: #2f6fd0;
+}
+
+/* Base Styles - Typography with higher specificity */
+@layer base {
+  html {
+    /* Stop iOS Safari inflating text in landscape, which breaks the fluid scale */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: var(--text-body);
+    line-height: 1.6;
+  }
+
+  /* Default heading sizes. These sit in the base layer, so any text-* utility
+     on an individual heading still wins. */
+  h1 {
+    font-size: var(--text-page-title);
+  }
+
+  h2 {
+    font-size: var(--text-section-title);
+  }
+
+  h3 {
+    font-size: var(--text-subsection);
+  }
+
+  h4 {
+    font-size: var(--text-body-lg);
+  }
+
+  h5,
+  h6 {
+    font-size: var(--text-body);
+  }
+
+  /* Secondary text sits 2px below the body default */
+  small,
+  figcaption {
+    font-size: var(--text-caption);
+  }
+
+  /* Force all headings to use EB Garamond */
+  h1, h2, h3, h4, h5, h6,
+  .split-parent h1, .split-parent h2, .split-parent h3, .split-parent h4, .split-parent h5, .split-parent h6,
+  .split-char, .split-word, .split-line {
+    font-family: 'EB Garamond', 'Times New Roman', 'Georgia', serif !important;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  /* Force all body text elements to use Poppins. The .font-serif exclusion is
+     what lets an inline accent inside a heading keep the serif face. */
+  p, span:not(.split-char):not(.split-word):not(.split-line):not(.font-serif), a, button, input, textarea, select, label, li, td, th, div:not(.split-parent) {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  }
+}
+
+/* Override Tailwind utilities with maximum specificity */
+.font-serif,
+.font-primary,
+h1.font-serif,
+h2.font-serif,
+h3.font-serif,
+h4.font-serif,
+h5.font-serif,
+h6.font-serif {
+  font-family: 'EB Garamond', 'Times New Roman', 'Georgia', serif !important;
+}
+
+/* GSAP Split Text Overrides - Force EB Garamond for heading characters */
+h1 .split-char,
+h1 .split-word,
+h1 .split-line,
+h2 .split-char,
+h2 .split-word,
+h2 .split-line,
+h3 .split-char,
+h3 .split-word,
+h3 .split-line,
+h4 .split-char,
+h4 .split-word,
+h4 .split-line,
+h5 .split-char,
+h5 .split-word,
+h5 .split-line,
+h6 .split-char,
+h6 .split-word,
+h6 .split-line {
+  font-family: 'EB Garamond', 'Times New Roman', 'Georgia', serif !important;
+  font-weight: inherit !important;
+}
+
+.font-secondary,
+p.font-secondary,
+span.font-secondary,
+div.font-secondary {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+/* Dark mode body background */
+.dark body {
+  background-color: #000000;
+  color: #F9FAFB;
+}
+
+/* Animation Classes */
+.motion-safe\:animate-fadeIn {
+  animation: fadeIn 0.6s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Page Loader - Only if still needed */
+.page-loaded {
+  opacity: 1;
+}
+
+.fade-in-element {
+  will-change: transform, opacity;
+}
+
+/* Scrollbar Styling */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Button Utilities - Moved to Tailwind where possible */
+@layer components {
+  .btn-primary {
+    @apply bg-blue-900 text-white px-6 py-3 rounded-lg transition-all duration-300 hover:bg-blue-800;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+}
+
+/* Large blurred layers are expensive to repaint and are purely decorative */
+@media (prefers-reduced-motion: reduce) {
+  .animate-aurora,
+  .animate-marquee {
+    animation: none !important;
+  }
+}
