@@ -3,14 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SplitText from '../../../components/ui/SplitText';
-import { vanityProducts } from '../../../data/vanityProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 
 const Vanities = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedFinishes, setSelectedFinishes] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   const [openSections, setOpenSections] = useState({
@@ -22,57 +24,49 @@ const Vanities = () => {
   useEffect(() => {
     document.title = 'Premium Vanities | Coppola Home';
     window.scrollTo(0, 0);
-    
-    // Check screen size
+
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-      if (window.innerWidth >= 1024) {
-        setIsFilterOpen(true);
-      }
+      if (window.innerWidth >= 1024) setIsFilterOpen(true);
     };
-    
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Extract unique values from products
-  const sizes = Array.from(new Set(vanityProducts.map(p => p.size).filter(Boolean))).sort();
-  const finishes = Array.from(new Set(vanityProducts.map(p => p.finish).filter(Boolean))).sort();
-  const brands = Array.from(new Set(vanityProducts.map(p => p.brand))).sort();
+  useEffect(() => {
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', 'vanity')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setProducts(data ?? []);
+        setLoading(false);
+      });
+  }, []);
 
-  // Toggle filter selections
-  const toggleSize = (size: string) => {
-    setSelectedSizes(prev => 
-      prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
-    );
-  };
+  // Extract unique filter values from DB products
+  const sizes = Array.from(new Set(products.map(p => p.filters?.size).filter(Boolean))).sort() as string[];
+  const finishes = Array.from(new Set(products.map(p => p.filters?.finish).filter(Boolean))).sort() as string[];
+  const brands = Array.from(new Set(products.map(p => p.brand).filter(Boolean))).sort() as string[];
 
-  const toggleFinish = (finish: string) => {
-    setSelectedFinishes(prev => 
-      prev.includes(finish) ? prev.filter(f => f !== finish) : [...prev, finish]
-    );
-  };
+  const toggleSize = (size: string) =>
+    setSelectedSizes(prev => prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]);
 
-  const toggleBrand = (brand: string) => {
-    setSelectedBrands(prev => 
-      prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]
-    );
-  };
+  const toggleFinish = (finish: string) =>
+    setSelectedFinishes(prev => prev.includes(finish) ? prev.filter(f => f !== finish) : [...prev, finish]);
 
-  const toggleSection = (section: 'size' | 'brand' | 'finish') => {
-    setOpenSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
+  const toggleBrand = (brand: string) =>
+    setSelectedBrands(prev => prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]);
+
+  const toggleSection = (section: 'size' | 'brand' | 'finish') =>
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
 
   // Filter products
-  const filteredProducts = vanityProducts.filter(product => {
-    const matchesSize = selectedSizes.length === 0 || (product.size && selectedSizes.includes(product.size));
-    const matchesFinish = selectedFinishes.length === 0 || (product.finish && selectedFinishes.includes(product.finish));
-    const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(product.brand);
+  const filteredProducts = products.filter(product => {
+    const matchesSize = selectedSizes.length === 0 || (product.filters?.size && selectedSizes.includes(product.filters.size));
+    const matchesFinish = selectedFinishes.length === 0 || (product.filters?.finish && selectedFinishes.includes(product.filters.finish));
+    const matchesBrand = selectedBrands.length === 0 || (product.brand && selectedBrands.includes(product.brand));
     return matchesSize && matchesFinish && matchesBrand;
   });
 
@@ -287,6 +281,19 @@ const Vanities = () => {
 
             {/* Products Grid */}
             <div className="flex-1">
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                      <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                      <div className="p-5 space-y-3">
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {visibleProducts.map((product, index) => (
                   <motion.div
@@ -300,22 +307,22 @@ const Vanities = () => {
                     <Link to={`/products/vanities/${product.slug}`} className="block">
                       {/* Image */}
                       <div className="aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                        <img 
+                        <img
                           src={product.images[0]}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
-                      
+
                       {/* Content */}
                       <div className="p-5">
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-xs font-medium text-gray-500 dark:text-gray-400 font-['Poppins',sans-serif]">
                             {product.brand}
                           </span>
-                          {product.size && (
+                          {product.filters?.size && (
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400 font-['Poppins',sans-serif]">
-                              {product.size}
+                              {product.filters.size}
                             </span>
                           )}
                         </div>
@@ -344,6 +351,7 @@ const Vanities = () => {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Pagination */}
               {totalPages > 1 && (
