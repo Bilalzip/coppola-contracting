@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { mirrorsProducts } from '../../../data/mirrorsProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import SplitText from '../../../components/ui/SplitText';
 
 const ContemporaryMirrors = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(9);
 
   useEffect(() => {
     document.title = 'Seamless Contemporary Mirrors | Coppola Home';
     window.scrollTo(0, 0);
+    supabase.from('products').select('*').eq('category', 'mirror').order('created_at', { ascending: false }).then(({ data }) => { setProducts(data ?? []); setLoading(false); });
   }, []);
 
   // Filter for contemporary/frameless/seamless mirrors
-  const contemporaryMirrors = mirrorsProducts.filter(product => 
-    product.tags?.some(tag => 
-      tag.includes('contemporary') || 
+  const contemporaryMirrors = products.filter(product =>
+    product.tags?.some(tag =>
+      tag.includes('contemporary') ||
       tag.includes('frameless') ||
       tag.includes('seamless') ||
       tag.includes('radiance') ||
@@ -88,6 +92,19 @@ const ContemporaryMirrors = () => {
       {/* Products Grid */}
       <section className="py-12 px-4 bg-white dark:bg-[#0a0a0a]">
         <div className="max-w-7xl mx-auto">
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+          <>
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
             {visibleMirrors.map((mirror, index) => (
               <motion.div
@@ -114,9 +131,9 @@ const ContemporaryMirrors = () => {
                         {mirror.name}
                       </h3>
 
-                      {mirror.shortDescription && (
+                      {mirror.short_description && (
                         <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-secondary line-clamp-2">
-                          {mirror.shortDescription}
+                          {mirror.short_description}
                         </p>
                       )}
 
@@ -173,6 +190,8 @@ const ContemporaryMirrors = () => {
                 No contemporary mirrors found at this time.
               </p>
             </motion.div>
+          )}
+          </>
           )}
         </div>
       </section>

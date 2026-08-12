@@ -1,71 +1,73 @@
+import { useEffect, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import ProductDetailLayout from '../../../components/features/ProductDetailLayout';
-import { mirrorsProducts } from '../../../data/mirrorsProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 
 const MirrorsDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [related, setRelated] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  if (!slug) {
-    return <Navigate to="/products/mirrors" replace />;
+  useEffect(() => {
+    if (!slug) return;
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', 'mirror')
+      .eq('slug', slug)
+      .single()
+      .then(({ data }) => {
+        if (!data) {
+          setNotFound(true);
+        } else {
+          setProduct(data);
+          supabase
+            .from('products')
+            .select('*')
+            .eq('category', 'mirror')
+            .neq('id', data.id)
+            .limit(4)
+            .then(({ data: rel }) => setRelated(rel ?? []));
+        }
+        setLoading(false);
+      });
+  }, [slug]);
+
+  if (!slug || notFound) return <Navigate to="/products/mirrors" replace />;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#001f54]" />
+      </div>
+    );
   }
 
-  const product = mirrorsProducts.find((item) => item.slug === slug);
+  if (!product) return <Navigate to="/products/mirrors" replace />;
 
-  if (!product) {
-    return <Navigate to="/products/mirrors" replace />;
-  }
-
-  // Transform specs array to object format for ProductDetailLayout
-  const specsObject = product.specs?.reduce((acc, spec) => {
-    acc[spec.label] = spec.value;
-    return acc;
-  }, {} as Record<string, string>) || {};
-
-  // Get related products from same collection or similar products
-  const relatedProducts = mirrorsProducts
-    .filter((item) => {
-      // Exclude current product
-      if (item.id === product.id) return false;
-      
-      // Prioritize same collection
-      if (product.collection && item.collection === product.collection) {
-        return true;
-      }
-      
-      // Or same vanity type (ensure both are arrays)
-      if (
-        product.vanityType && 
-        Array.isArray(product.vanityType) && 
-        item.vanityType && 
-        Array.isArray(item.vanityType)
-      ) {
-        return product.vanityType.some((type) => item.vanityType?.includes(type));
-      }
-      
-      return false;
-    })
-    .slice(0, 4) // Limit to 4 products
-    .map((item) => ({
-      id: item.id,
-      name: item.name,
-      slug: item.slug,
-      images: item.images,
-      collection: item.collection,
-      category: item.category,
-    }));
+  const specsRecord: Record<string, string> = {};
+  (product.specs ?? []).forEach(s => { specsRecord[s.label] = s.value; });
 
   return (
     <ProductDetailLayout
       name={product.name}
-      brand={product.brand || ''}
+      brand={product.brand ?? ''}
       category={product.category}
       images={product.images}
-      description={product.description}
-      shortDescription={product.shortDescription || product.description.substring(0, 150)}
-      specs={specsObject}
+      description={product.description ?? ''}
+      shortDescription={product.short_description ?? product.description?.substring(0, 150) ?? ''}
+      specs={specsRecord}
       currentProductId={product.id}
-      collection={product.collection}
-      relatedProducts={relatedProducts}
+      relatedProducts={related.map(r => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        images: r.images,
+        category: r.category,
+      }))}
       seoTags={['LED Mirrors', 'Modern Design', 'Premium Quality']}
     />
   );

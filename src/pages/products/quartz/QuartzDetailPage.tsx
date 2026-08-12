@@ -1,36 +1,55 @@
+import { useEffect, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import ProductDetailLayout from '../../../components/features/ProductDetailLayout';
-import { quartzProducts } from '../../../data/quartzProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 
 const QuartzDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [related, setRelated] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  if (!slug) {
-    return <Navigate to="/quartz-countertops" replace />;
+  useEffect(() => {
+    if (!slug) return;
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', 'quartz')
+      .eq('slug', slug)
+      .single()
+      .then(({ data }) => {
+        if (!data) {
+          setNotFound(true);
+        } else {
+          setProduct(data);
+          supabase
+            .from('products')
+            .select('*')
+            .eq('category', 'quartz')
+            .neq('id', data.id)
+            .limit(4)
+            .then(({ data: rel }) => setRelated(rel ?? []));
+        }
+        setLoading(false);
+      });
+  }, [slug]);
+
+  if (!slug || notFound) return <Navigate to="/quartz-countertops" replace />;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#001f54]" />
+      </div>
+    );
   }
 
-  const product = quartzProducts.find((item) => item.slug === slug);
+  if (!product) return <Navigate to="/quartz-countertops" replace />;
 
-  if (!product) {
-    return <Navigate to="/quartz-countertops" replace />;
-  }
-
-  const specs = (product.specs ?? []).reduce<Record<string, string>>((acc, spec) => {
-    acc[spec.label] = spec.value;
-    return acc;
-  }, {});
-
-  const relatedProducts = quartzProducts
-    .filter((item) => item.slug !== product.slug && item.collection === product.collection)
-    .slice(0, 4)
-    .map((item) => ({
-      id: item.id,
-      name: item.name,
-      slug: item.slug,
-      images: item.images,
-      collection: item.collection,
-      category: item.category,
-    }));
+  const specsRecord: Record<string, string> = {};
+  (product.specs ?? []).forEach(s => { specsRecord[s.label] = s.value; });
 
   return (
     <ProductDetailLayout
@@ -38,12 +57,17 @@ const QuartzDetailPage: React.FC = () => {
       brand={product.brand ?? 'COPPOLA QUARTZ'}
       category={product.category}
       images={product.images}
-      shortDescription={product.shortDescription ?? ''}
-      description={product.description}
-      specs={specs}
+      description={product.description ?? ''}
+      shortDescription={product.short_description ?? ''}
+      specs={specsRecord}
       currentProductId={product.id}
-      collection={product.collection}
-      relatedProducts={relatedProducts}
+      relatedProducts={related.map(r => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        images: r.images,
+        category: r.category,
+      }))}
       seoTags={['Quartz Countertops', 'Engineered Stone', 'Luxury Surfaces']}
     />
   );

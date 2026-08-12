@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { sinkProducts } from '../../../data/sinkProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import SplitText from '../../../components/ui/SplitText';
 
 const ExploreSinks = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedColor, setSelectedColor] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -18,7 +21,8 @@ const ExploreSinks = () => {
   useEffect(() => {
     document.title = 'Explore Sinks | Coppola Home';
     window.scrollTo(0, 0);
-    
+    supabase.from('products').select('*').eq('category', 'sink').order('created_at', { ascending: false }).then(({ data }) => { setProducts(data ?? []); setLoading(false); });
+
     // Check screen size
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -26,10 +30,10 @@ const ExploreSinks = () => {
         setIsFilterOpen(true);
       }
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -55,11 +59,11 @@ const ExploreSinks = () => {
   // Get unique categories with product counts
   const categoryData = categories.map(category => {
     const categorySlug = category.toLowerCase().replace(/\s+/g, '-');
-    const productsInCategory = sinkProducts.filter(product => {
-      const matchesType = selectedType === 'all' || 
-        (product.sinkType && product.sinkType.toLowerCase() === selectedType.toLowerCase());
-      const matchesColor = selectedColor === 'all' || 
-        (product.color && product.color.toLowerCase() === selectedColor.toLowerCase().replace(/\s+/g, '-'));
+    const productsInCategory = products.filter(product => {
+      const matchesType = selectedType === 'all' ||
+        (product.filters?.sink_type && product.filters.sink_type.toLowerCase() === selectedType.toLowerCase());
+      const matchesColor = selectedColor === 'all' ||
+        (product.filters?.color && product.filters.color.toLowerCase() === selectedColor.toLowerCase().replace(/\s+/g, '-'));
       const matchesCategory = product.tags?.includes(categorySlug);
       return matchesType && matchesColor && matchesCategory;
     }).length;
@@ -72,14 +76,14 @@ const ExploreSinks = () => {
   });
 
   // Filter products
-  const filteredProducts = sinkProducts.filter(product => {
-    const matchesType = selectedType === 'all' || 
-      (product.sinkType && product.sinkType.toLowerCase() === selectedType.toLowerCase());
-    const matchesColor = selectedColor === 'all' || 
-      (product.color && product.color.toLowerCase() === selectedColor.toLowerCase().replace(/\s+/g, '-'));
-    const matchesCategory = !selectedCategory || 
+  const filteredProducts = products.filter(product => {
+    const matchesType = selectedType === 'all' ||
+      (product.filters?.sink_type && product.filters.sink_type.toLowerCase() === selectedType.toLowerCase());
+    const matchesColor = selectedColor === 'all' ||
+      (product.filters?.color && product.filters.color.toLowerCase() === selectedColor.toLowerCase().replace(/\s+/g, '-'));
+    const matchesCategory = !selectedCategory ||
       (product.tags && product.tags.includes(selectedCategory));
-    
+
     return matchesType && matchesColor && matchesCategory;
   });
 
@@ -376,7 +380,18 @@ const ExploreSinks = () => {
               </div>
 
               {/* Products Grid */}
-              {displayedProducts.length > 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                      <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                      <div className="p-4 space-y-2">
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : displayedProducts.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {displayedProducts.map((product, index) => (
@@ -405,7 +420,7 @@ const ExploreSinks = () => {
                               {product.name}
                             </h3>
                             <p className="text-xs text-gray-600 dark:text-gray-400 font-secondary line-clamp-1">
-                              {product.shortDescription}
+                              {product.short_description}
                             </p>
                           </div>
                         </Link>

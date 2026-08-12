@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, X } from 'lucide-react';
-import { mirrorsProducts } from '../../../data/mirrorsProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import SplitText from '../../../components/ui/SplitText';
 
 const ExploreMirrors = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedVanityType, setSelectedVanityType] = useState<string>('all');
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
@@ -23,7 +26,8 @@ const ExploreMirrors = () => {
   useEffect(() => {
     document.title = 'Explore Mirrors | Coppola Home';
     window.scrollTo(0, 0);
-    
+    supabase.from('products').select('*').eq('category', 'mirror').order('created_at', { ascending: false }).then(({ data }) => { setProducts(data ?? []); setLoading(false); });
+
     // Check screen size
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -31,10 +35,10 @@ const ExploreMirrors = () => {
         setIsFilterOpen(true);
       }
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -111,9 +115,9 @@ const ExploreMirrors = () => {
   // Get unique collections with product counts
   const collectionData = collections.map(collection => {
     const collectionSlug = collection.toLowerCase().replace(/\s+/g, '-');
-    const productsInCollection = mirrorsProducts.filter(product => {
+    const productsInCollection = products.filter(product => {
       const matchesVanityType = selectedVanityType === 'all' || 
-        (product.vanityType && product.vanityType.includes(selectedVanityType as 'single' | 'double'));
+        ((product as any).vanityType && (product as any).vanityType.includes(selectedVanityType as 'single' | 'double'));
       const matchesCollection = product.tags?.includes(collectionSlug);
       return matchesVanityType && matchesCollection;
     });
@@ -138,8 +142,8 @@ const ExploreMirrors = () => {
   const vanityCollectionCards = [];
   
   // Single Vanity Card
-  const singleVanityMirrors = mirrorsProducts.filter(product => 
-    product.vanityType?.includes('single') && 
+  const singleVanityMirrors = products.filter(product => 
+    (product as any).vanityType?.includes('single') && 
     singleVanityProducts.some(name => product.name === name)
   );
   if (singleVanityMirrors.length > 0) {
@@ -153,8 +157,8 @@ const ExploreMirrors = () => {
   }
 
   // Double Vanity Card
-  const doubleVanityMirrors = mirrorsProducts.filter(product => 
-    product.vanityType?.includes('double') && 
+  const doubleVanityMirrors = products.filter(product => 
+    (product as any).vanityType?.includes('double') && 
     doubleVanityProducts.some(name => product.name === name)
   );
   if (doubleVanityMirrors.length > 0) {
@@ -170,14 +174,14 @@ const ExploreMirrors = () => {
   // Combine all cards
   const allCollectionCards = [...vanityCollectionCards, ...collectionData];
 
-  const filteredProducts = mirrorsProducts.filter((product) => {
+  const filteredProducts = products.filter((product) => {
     // Filter by vanity type
     const matchesVanityType = selectedVanityType === 'all' || 
-      (product.vanityType && product.vanityType.includes(selectedVanityType as 'single' | 'double'));
+      ((product as any).vanityType && (product as any).vanityType.includes(selectedVanityType as 'single' | 'double'));
     
     // Filter by vanity collection if one is selected
     if (selectedVanityCollection) {
-      const matchesVanityCollection = product.vanityType?.includes(selectedVanityCollection);
+      const matchesVanityCollection = (product as any).vanityType?.includes(selectedVanityCollection);
       const productList = selectedVanityCollection === 'single' ? singleVanityProducts : doubleVanityProducts;
       const inProductList = productList.includes(product.name);
       return matchesVanityType && matchesVanityCollection && inProductList;
@@ -474,6 +478,20 @@ const ExploreMirrors = () => {
                 </div>
               )}
 
+              {/* Loading Skeleton */}
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                      <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                      <div className="p-4 space-y-2">
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+              <>
               {/* Show Collections or Products */}
               {!selectedCollection && !selectedVanityCollection ? (
                 /* Collections Grid */
@@ -560,9 +578,9 @@ const ExploreMirrors = () => {
                                 {product.name}
                               </h3>
                               
-                              {(product.shortDescription || product.description) && (
+                              {(product.short_description || product.description) && (
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 font-secondary line-clamp-2">
-                                  {product.shortDescription || product.description}
+                                  {product.short_description || product.description}
                                 </p>
                               )}
 
@@ -616,6 +634,8 @@ const ExploreMirrors = () => {
                   </p>
                 </div>
               ) : null}
+              </>
+              )}
             </div>
           </div>
         </div>

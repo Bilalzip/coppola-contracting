@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { quartzProducts } from '../../../data/quartzProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import NewsletterBanner from '../../../components/layout/NewsletterBanner';
 import Button from '../../../components/ui/Button';
 import SplitText from '../../../components/ui/SplitText';
@@ -17,10 +18,12 @@ const toTitleCase = (value: string) =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
-const thicknessList = (thickness: string | string[] | undefined) =>
-  Array.isArray(thickness) ? thickness : thickness ? [thickness] : [];
+const thicknessList = (value: string | undefined) =>
+  value ? value.split(',').map(v => v.trim()).filter(Boolean) : [];
 
 const QuartzCountertops: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCollection, setSelectedCollection] = useState('all');
   const [selectedThickness, setSelectedThickness] = useState('all');
   const [query, setQuery] = useState('');
@@ -30,48 +33,54 @@ const QuartzCountertops: React.FC = () => {
 
   useEffect(() => {
     document.title = 'Quartz Countertops | Coppola Home';
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', 'quartz')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setProducts(data ?? []); setLoading(false); });
   }, []);
 
   const collections = useMemo(() => {
     const counts = new Map<string, number>();
-    quartzProducts.forEach((product) => {
-      const key = (product.collection ?? '').toLowerCase();
+    products.forEach((product) => {
+      const key = (product.filters?.collection ?? '').toLowerCase();
       if (!key) return;
       counts.set(key, (counts.get(key) ?? 0) + 1);
     });
 
     return [
-      { id: 'all', name: 'All Collections', count: quartzProducts.length },
+      { id: 'all', name: 'All Collections', count: products.length },
       ...Array.from(counts.entries())
         .sort((a, b) => b[1] - a[1])
         .map(([id, count]) => ({ id, name: toTitleCase(id), count })),
     ];
-  }, []);
+  }, [products]);
 
   const thicknesses = useMemo(() => {
     const counts = new Map<string, number>();
-    quartzProducts.forEach((product) => {
-      thicknessList(product.thickness).forEach((value) => {
+    products.forEach((product) => {
+      thicknessList(product.filters?.thickness).forEach((value) => {
         counts.set(value, (counts.get(value) ?? 0) + 1);
       });
     });
 
     return [
-      { id: 'all', name: 'Any Thickness', count: quartzProducts.length },
+      { id: 'all', name: 'Any Thickness', count: products.length },
       ...Array.from(counts.entries())
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([id, count]) => ({ id, name: id, count })),
     ];
-  }, []);
+  }, [products]);
 
   const filtered = useMemo(() => {
     const search = query.trim().toLowerCase();
 
-    return quartzProducts.filter((product) => {
-      if (selectedCollection !== 'all' && (product.collection ?? '').toLowerCase() !== selectedCollection) {
+    return products.filter((product) => {
+      if (selectedCollection !== 'all' && (product.filters?.collection ?? '').toLowerCase() !== selectedCollection) {
         return false;
       }
-      if (selectedThickness !== 'all' && !thicknessList(product.thickness).includes(selectedThickness)) {
+      if (selectedThickness !== 'all' && !thicknessList(product.filters?.thickness).includes(selectedThickness)) {
         return false;
       }
       if (search && !product.name.toLowerCase().includes(search)) {
@@ -79,7 +88,7 @@ const QuartzCountertops: React.FC = () => {
       }
       return true;
     });
-  }, [selectedCollection, selectedThickness, query]);
+  }, [products, selectedCollection, selectedThickness, query]);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
@@ -297,14 +306,28 @@ const QuartzCountertops: React.FC = () => {
             <div className="flex-1">
               <div className="mb-6">
                 <p className="text-sm text-gray-600 dark:text-gray-400 font-secondary">
-                  Showing{' '}
-                  <span className="font-semibold text-gray-900 dark:text-white">{visible.length}</span> of{' '}
-                  <span className="font-semibold text-gray-900 dark:text-white">{filtered.length}</span>{' '}
-                  {filtered.length === 1 ? 'slab' : 'slabs'}
+                  {loading ? 'Loading slabs…' : (
+                    <>Showing{' '}
+                    <span className="font-semibold text-gray-900 dark:text-white">{visible.length}</span> of{' '}
+                    <span className="font-semibold text-gray-900 dark:text-white">{filtered.length}</span>{' '}
+                    {filtered.length === 1 ? 'slab' : 'slabs'}</>
+                  )}
                 </p>
               </div>
 
-              {filtered.length === 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                      <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                      <div className="p-3 space-y-2">
+                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-12 text-center">
                   <p className="text-base text-gray-600 dark:text-gray-400 font-secondary mb-4">
                     No slabs match those filters.
@@ -332,10 +355,10 @@ const QuartzCountertops: React.FC = () => {
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               loading="lazy"
                             />
-                            {product.collection && (
+                            {product.filters?.collection && (
                               <div className="absolute top-2 right-2">
                                 <span className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-gray-900 dark:text-white px-2 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-700">
-                                  {toTitleCase(product.collection)}
+                                  {toTitleCase(product.filters.collection)}
                                 </span>
                               </div>
                             )}
@@ -343,14 +366,16 @@ const QuartzCountertops: React.FC = () => {
 
                           <div className="p-3">
                             <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 mb-1 font-secondary">
-                              {thicknessList(product.thickness).join(' · ') || product.brand}
+                              {thicknessList(product.filters?.thickness).join(' · ') || product.brand}
                             </p>
                             <h3 className="text-sm font-normal text-gray-900 dark:text-white mb-1 font-serif group-hover:text-[#001f54] dark:group-hover:text-[#0466c8] transition-colors line-clamp-1">
                               {product.name}
                             </h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-secondary line-clamp-2">
-                              {product.slabSize} · {product.finish}
-                            </p>
+                            {(product.filters?.slab_size || product.filters?.finish) && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-secondary line-clamp-2">
+                                {[product.filters?.slab_size, product.filters?.finish].filter(Boolean).join(' · ')}
+                              </p>
+                            )}
 
                             <div className="flex items-center gap-1 text-xs font-medium text-[#001f54] dark:text-[#0466c8]">
                               <span className="relative">

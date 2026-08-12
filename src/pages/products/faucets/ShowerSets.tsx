@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { faucetProducts } from '../../../data/faucetProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import NewsletterBanner from '../../../components/layout/NewsletterBanner';
 import SplitText from '../../../components/ui/SplitText';
 
 const ShowerSets = () => {
+  const [showerSets, setShowerSets] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     document.title = 'Shower Sets | Coppola Home';
     window.scrollTo(0, 0);
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', 'faucet')
+      .eq('filters->>faucet_category', 'Shower')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setShowerSets(data ?? []); setLoading(false); });
   }, []);
-
-  const showerSets = faucetProducts.filter((product) => product.category === 'shower');
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#000000]">
@@ -64,7 +73,18 @@ const ShowerSets = () => {
       {/* Products Section */}
       <section className="py-12 px-4">
         <div className="max-w-7xl mx-auto">
-          {showerSets.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                  <div className="p-3.5 space-y-2">
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : showerSets.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-lg text-gray-600 dark:text-gray-400 font-secondary">
                 No shower sets available at the moment. Please check back soon.

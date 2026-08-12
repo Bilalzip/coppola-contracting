@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { sinkProducts } from '../../../data/sinkProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import NewsletterBanner from '../../../components/layout/NewsletterBanner';
 
 const VesselSinks = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedBrand, setSelectedBrand] = useState<string>('all');
   const [selectedMaterial, setSelectedMaterial] = useState<string>('all');
 
@@ -17,19 +20,20 @@ const VesselSinks = () => {
         'Artistic vessel sink designs. Statement pieces that transform bathroom aesthetics with distinctive style.'
       );
     }
+    supabase.from('products').select('*').eq('category', 'sink').order('created_at', { ascending: false }).then(({ data }) => { setProducts(data ?? []); setLoading(false); });
   }, []);
 
   // Filter products for vessel sinks
-  const vesselProducts = sinkProducts.filter((product) => product.mountingType === 'vessel');
+  const vesselProducts = products.filter((product) => product.filters?.mounting_type === 'vessel');
 
   // Extract unique brands and materials
-  const brands = ['all', ...Array.from(new Set(vesselProducts.map((p) => p.brand).filter(Boolean)))];
-  const materials = ['all', ...Array.from(new Set(vesselProducts.map((p) => p.material).filter(Boolean)))];
+  const brands = ['all', ...Array.from(new Set(vesselProducts.map((p) => p.brand).filter(Boolean))) as string[]];
+  const materials = ['all', ...Array.from(new Set(vesselProducts.map((p) => p.filters?.material).filter(Boolean))) as string[]];
 
   // Apply additional filters
   const filteredProducts = vesselProducts.filter((product) => {
     const brandMatch = selectedBrand === 'all' || product.brand === selectedBrand;
-    const materialMatch = selectedMaterial === 'all' || product.material === selectedMaterial;
+    const materialMatch = selectedMaterial === 'all' || product.filters?.material === selectedMaterial;
     return brandMatch && materialMatch;
   });
 
@@ -116,7 +120,18 @@ const VesselSinks = () => {
           </div>
 
           {/* Products Grid */}
-          {filteredProducts.length > 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
               {filteredProducts.map((product, index) => (
                 <Link

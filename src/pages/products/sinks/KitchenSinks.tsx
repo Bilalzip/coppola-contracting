@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Minus, X } from 'lucide-react';
-import { sinkProducts } from '../../../data/sinkProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import NewsletterBanner from '../../../components/layout/NewsletterBanner';
 import SplitText from '../../../components/ui/SplitText';
 import Button from '../../../components/ui/Button';
@@ -18,6 +19,8 @@ const COLORS = ['Black', 'Gray', 'White', 'Brushed Satin', 'Graphite Black'];
 const MATERIALS = ['Granite Composite', 'Stainless Steel Sinks'];
 
 const KitchenSinks = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedColor, setSelectedColor] = useState<string>('All');
   const [selectedMaterial, setSelectedMaterial] = useState<string>('All');
@@ -37,7 +40,8 @@ const KitchenSinks = () => {
         'Professional-grade kitchen sinks built for culinary excellence. Durable surfaces that withstand daily kitchen demands.'
       );
     }
-    
+    supabase.from('products').select('*').eq('category', 'sink').order('created_at', { ascending: false }).then(({ data }) => { setProducts(data ?? []); setLoading(false); });
+
     // Check screen size
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -45,25 +49,25 @@ const KitchenSinks = () => {
         setIsFilterOpen(true);
       }
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // Filter products for kitchen sinks
-  const kitchenProducts = sinkProducts.filter((product) => product.sinkType === 'kitchen');
+  const kitchenProducts = products.filter((product) => product.filters?.sink_type === 'Kitchen');
 
   // Apply filters
   const filteredProducts = kitchenProducts.filter((product) => {
-    const categoryMatch = selectedCategory === 'All' || 
+    const categoryMatch = selectedCategory === 'All' ||
       product.brand?.toLowerCase().includes(selectedCategory.toLowerCase());
-    const colorMatch = selectedColor === 'All' || 
-      product.finish?.toLowerCase().includes(selectedColor.toLowerCase());
-    const materialMatch = selectedMaterial === 'All' || 
-      product.material?.toLowerCase().includes(selectedMaterial.toLowerCase());
-    
+    const colorMatch = selectedColor === 'All' ||
+      product.filters?.finish?.toLowerCase().includes(selectedColor.toLowerCase());
+    const materialMatch = selectedMaterial === 'All' ||
+      product.filters?.material?.toLowerCase().includes(selectedMaterial.toLowerCase());
+
     return categoryMatch && colorMatch && materialMatch;
   });
 
@@ -387,7 +391,18 @@ const KitchenSinks = () => {
               </div>
 
               {/* Products */}
-              {filteredProducts.length > 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                      <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                      <div className="p-4 space-y-2">
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredProducts.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                   {filteredProducts.map((product, index) => (
                     <motion.div

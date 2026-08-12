@@ -1,11 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { flooringProducts } from '../../../data/flooringProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import SplitText from '../../../components/ui/SplitText';
 import Button from '../../../components/ui/Button';
 
 const Flooring = (): JSX.Element => {
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [selectedFilters, setSelectedFilters] = useState<{
     category: string[];
@@ -18,6 +21,15 @@ const Flooring = (): JSX.Element => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 12;
+
+  useEffect(() => {
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', 'flooring')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setAllProducts(data ?? []); setLoading(false); });
+  }, []);
 
   const faqs = [
     {
@@ -66,10 +78,10 @@ const Flooring = (): JSX.Element => {
 
   const filteredProducts = useMemo(() => {
     if (getActiveFilterCount() === 0) {
-      return flooringProducts;
+      return allProducts;
     }
 
-    return flooringProducts.filter(product => {
+    return allProducts.filter(product => {
       // Check category filter
       if (selectedFilters.category.length > 0) {
         const hasMatchingCategory = selectedFilters.category.some(filter =>
@@ -92,7 +104,7 @@ const Flooring = (): JSX.Element => {
 
       return true;
     });
-  }, [selectedFilters]);
+  }, [allProducts, selectedFilters]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
@@ -117,7 +129,7 @@ const Flooring = (): JSX.Element => {
   };
 
   // Reset to first page when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [selectedFilters]);
 
@@ -126,9 +138,9 @@ const Flooring = (): JSX.Element => {
       id: 'category',
       title: 'Flooring Category',
       options: [
-        { value: 'engineered-hardwood', label: 'Engineered Hardwood', count: flooringProducts.filter(p => p.tags?.includes('engineered-hardwood')).length },
-        { value: 'luxury-loose-lay', label: 'Luxury LooseLay', count: flooringProducts.filter(p => p.tags?.includes('luxury-loose-lay')).length },
-        { value: 'luxury-vinyl', label: 'Luxury Vinyl', count: flooringProducts.filter(p => p.tags?.includes('luxury-vinyl')).length }
+        { value: 'engineered-hardwood', label: 'Engineered Hardwood', count: allProducts.filter(p => p.tags?.includes('engineered-hardwood')).length },
+        { value: 'luxury-loose-lay', label: 'Luxury LooseLay', count: allProducts.filter(p => p.tags?.includes('luxury-loose-lay')).length },
+        { value: 'luxury-vinyl', label: 'Luxury Vinyl', count: allProducts.filter(p => p.tags?.includes('luxury-vinyl')).length }
       ]
     }
   ];
@@ -443,7 +455,19 @@ const Flooring = (): JSX.Element => {
                 </div>
 
                 {/* Products Grid */}
-                {currentProducts.length > 0 ? (
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                        <div className="aspect-[4/3] bg-gray-200 dark:bg-gray-800" />
+                        <div className="p-5 space-y-2">
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : currentProducts.length > 0 ? (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {currentProducts.map((product) => (
@@ -467,7 +491,7 @@ const Flooring = (): JSX.Element => {
                               {product.name}
                             </h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400 font-secondary line-clamp-2">
-                              {product.shortDescription}
+                              {product.short_description}
                             </p>
                           </div>
                         </Link>

@@ -1,31 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toiletProducts } from '../../../data/toiletProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import NewsletterBanner from '../../../components/layout/NewsletterBanner';
 import Button from '../../../components/ui/Button';
 import SplitText from '../../../components/ui/SplitText';
 
 const Toilets: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
 
-  // Map products to add category
-  const toilets = toiletProducts.map(product => ({
-    ...product,
-    category: product.category === 'Smart Toilets' ? 'intelligent' : 'regular',
-    image: product.images[0]
+  useEffect(() => {
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', 'toilet')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setProducts(data ?? []);
+        setLoading(false);
+      });
+  }, []);
+
+  // Map to internal shape with display-category derived from filters
+  const toilets = products.map(p => ({
+    ...p,
+    displayCategory: p.filters?.toilet_type?.toLowerCase().includes('smart') ? 'intelligent' : 'regular',
+    image: p.images[0],
+    shortDescription: p.short_description,
   }));
 
   const categories = [
     { id: 'all', name: 'All Toilets', count: toilets.length },
-    { id: 'intelligent', name: 'Intelligent Toilets', count: toilets.filter(t => t.category === 'intelligent').length },
-    { id: 'regular', name: 'Regular Toilets', count: toilets.filter(t => t.category === 'regular').length }
+    { id: 'intelligent', name: 'Intelligent Toilets', count: toilets.filter(t => t.displayCategory === 'intelligent').length },
+    { id: 'regular', name: 'Regular Toilets', count: toilets.filter(t => t.displayCategory === 'regular').length },
   ];
 
   const filteredToilets = selectedCategory === 'all'
     ? toilets
-    : toilets.filter(toilet => toilet.category === selectedCategory);
+    : toilets.filter(t => t.displayCategory === selectedCategory);
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
@@ -178,7 +194,19 @@ const Toilets: React.FC = () => {
                 </p>
               </div>
 
-              {/* Products Grid - Smaller cards */}
+              {loading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                      <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                      <div className="p-3 space-y-2">
+                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredToilets.map((toilet, index) => (
                   <motion.div
@@ -199,7 +227,7 @@ const Toilets: React.FC = () => {
                             loading="lazy"
                           />
                           {/* Smart Badge - Minimalistic */}
-                          {toilet.category === 'intelligent' && (
+                          {toilet.displayCategory === 'intelligent' && (
                             <div className="absolute top-2 right-2">
                               <span className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-gray-900 dark:text-white px-2 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-700">
                                 Smart
@@ -244,6 +272,7 @@ const Toilets: React.FC = () => {
                   </motion.div>
                 ))}
               </div>
+              )}
             </div>
           </div>
         </div>

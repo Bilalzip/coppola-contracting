@@ -1,28 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { faucetProducts } from '../../../data/faucetProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import NewsletterBanner from '../../../components/layout/NewsletterBanner';
 import SplitText from '../../../components/ui/SplitText';
 
 const KitchenFaucets = () => {
+  const [kitchenFaucets, setKitchenFaucets] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     document.title = 'Kitchen Faucets | Coppola Home';
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute(
-        'content',
-        'Premium kitchen faucets combining exceptional performance with elegant design. Built for the demands of modern cooking.'
-      );
-    }
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', 'faucet')
+      .eq('filters->>faucet_category', 'Kitchen')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setKitchenFaucets(data ?? []); setLoading(false); });
   }, []);
-
-  const kitchenFaucets = faucetProducts.filter((product) => product.category === 'kitchen');
-  
-  console.log('All faucet products:', faucetProducts);
-  console.log('Kitchen faucets:', kitchenFaucets);
-  console.log('Kitchen faucets count:', kitchenFaucets.length);
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950">
@@ -84,7 +82,18 @@ const KitchenFaucets = () => {
       {/* Products Section */}
       <section className="py-12 md:py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {kitchenFaucets.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                  <div className="p-3.5 space-y-2">
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : kitchenFaucets.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-lg text-neutral-600 dark:text-neutral-400 font-sans">
                 No kitchen faucets available at the moment. Please check back soon.
@@ -121,6 +130,11 @@ const KitchenFaucets = () => {
                         <h3 className="text-sm font-normal text-gray-900 dark:text-white mb-1.5 font-serif group-hover:text-[#001f54] dark:group-hover:text-[#0466c8] transition-colors line-clamp-2">
                           {product.name}
                         </h3>
+                        {product.short_description && (
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-1.5 font-secondary line-clamp-2">
+                            {product.short_description}
+                          </p>
+                        )}
 
                         {/* View Details Link */}
                         <div className="flex items-center gap-1.5 text-xs font-medium text-[#001f54] dark:text-[#0466c8] mt-2">

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { faucetProducts } from '../../../data/faucetProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import SplitText from '../../../components/ui/SplitText';
 
 const BathroomFaucets = () => {
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -14,7 +16,14 @@ const BathroomFaucets = () => {
   useEffect(() => {
     document.title = 'Bathroom Faucets | Coppola Home';
     window.scrollTo(0, 0);
-    
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', 'faucet')
+      .eq('filters->>faucet_category', 'Bathroom')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setAllProducts(data ?? []));
+
     // Check screen size
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -22,32 +31,30 @@ const BathroomFaucets = () => {
         setIsFilterOpen(true);
       }
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Bath Collections
+  // Bath Collections — derive from DB data, fall back to static slugs for images
   const collections = [
-    { name: 'ARCH', count: 7, slug: 'arch' },
-    { name: 'RITTZE', count: 14, slug: 'rittze' },
-    { name: 'ONO', count: 5, slug: 'ono' },
-    { name: 'NEO', count: 7, slug: 'neo' },
-    { name: 'OPUS', count: 21, slug: 'opus' },
-    { name: 'ORIGIN PLUS', count: 6, slug: 'origin-plus' },
-    { name: 'ORIGIN', count: 20, slug: 'origin' },
-    { name: 'GIO', count: 37, slug: 'gio' },
-    { name: 'MORANDI', count: 12, slug: 'morandi' },
-    { name: 'PEI', count: 3, slug: 'pei' },
+    { name: 'ARCH', count: allProducts.filter(p => p.tags?.includes('arch')).length || 0, slug: 'arch' },
+    { name: 'RITTZE', count: allProducts.filter(p => p.tags?.includes('rittze')).length || 0, slug: 'rittze' },
+    { name: 'ONO', count: allProducts.filter(p => p.tags?.includes('ono')).length || 0, slug: 'ono' },
+    { name: 'NEO', count: allProducts.filter(p => p.tags?.includes('neo')).length || 0, slug: 'neo' },
+    { name: 'OPUS', count: allProducts.filter(p => p.tags?.includes('opus')).length || 0, slug: 'opus' },
+    { name: 'ORIGIN PLUS', count: allProducts.filter(p => p.tags?.includes('origin-plus')).length || 0, slug: 'origin-plus' },
+    { name: 'ORIGIN', count: allProducts.filter(p => p.tags?.includes('origin')).length || 0, slug: 'origin' },
+    { name: 'GIO', count: allProducts.filter(p => p.tags?.includes('gio')).length || 0, slug: 'gio' },
+    { name: 'MORANDI', count: allProducts.filter(p => p.tags?.includes('morandi')).length || 0, slug: 'morandi' },
+    { name: 'PEI', count: allProducts.filter(p => p.tags?.includes('pei')).length || 0, slug: 'pei' },
   ];
-
-  const bathroomFaucets = faucetProducts.filter((product) => product.category === 'bathroom');
 
   // Create collection cards with specific images
   const collectionCards = collections.map(collection => {
-    let collectionImage = bathroomFaucets[0]?.images[0] || '/assets/gallery/bathroom-faucets-card-image.avif';
+    let collectionImage = allProducts[0]?.images[0] || '/assets/gallery/bathroom-faucets-card-image.avif';
     
     // Set specific images for collections
     if (collection.slug === 'arch') {
@@ -80,9 +87,8 @@ const BathroomFaucets = () => {
     };
   });
 
-  const filteredProducts = bathroomFaucets.filter((product) => {
+  const filteredProducts = allProducts.filter((product) => {
     if (selectedCollection) {
-      // Filter products by collection tag
       return product.tags?.includes(selectedCollection);
     }
     return true;
@@ -356,9 +362,9 @@ const BathroomFaucets = () => {
                                 {product.name}
                               </h3>
                               
-                              {(product.shortDescription || product.description) && (
+                              {(product.short_description || product.description) && (
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 font-secondary line-clamp-2">
-                                  {product.shortDescription || product.description}
+                                  {product.short_description || product.description}
                                 </p>
                               )}
 

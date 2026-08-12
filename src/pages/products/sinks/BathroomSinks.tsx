@@ -1,12 +1,16 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { sinkProducts } from '../../../data/sinkProducts';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 import NewsletterBanner from '../../../components/layout/NewsletterBanner';
 import SplitText from '../../../components/ui/SplitText';
 import Button from '../../../components/ui/Button';
 
 const BathroomSinks = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     document.title = 'Bathroom Sinks | Coppola Home';
     const metaDescription = document.querySelector('meta[name="description"]');
@@ -16,10 +20,11 @@ const BathroomSinks = () => {
         'Elegant bathroom sinks that elevate your personal space. Refined designs that combine form and function.'
       );
     }
+    supabase.from('products').select('*').eq('category', 'sink').order('created_at', { ascending: false }).then(({ data }) => { setProducts(data ?? []); setLoading(false); });
   }, []);
 
   // Filter products for bathroom sinks
-  const bathroomProducts = sinkProducts.filter((product) => product.sinkType === 'bathroom');
+  const bathroomProducts = products.filter((product) => product.filters?.sink_type === 'Bathroom');
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#000000]">
@@ -80,7 +85,18 @@ const BathroomSinks = () => {
           </div>
 
           {/* Products Grid */}
-          {bathroomProducts.length > 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-gray-200 dark:bg-gray-800" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : bathroomProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {bathroomProducts.map((product, index) => (
                 <motion.div

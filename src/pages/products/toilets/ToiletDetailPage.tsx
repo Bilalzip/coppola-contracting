@@ -1,33 +1,76 @@
+import { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { toiletProducts } from '../../../data/toiletProducts';
 import ProductDetailLayout from '../../../components/features/ProductDetailLayout';
+import { supabase } from '../../../lib/supabase';
+import type { Product } from '../../../types/database';
 
 const ToiletDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  
-  // Find the product by slug
-  const product = toiletProducts.find(p => p.slug === slug);
-  
-  // If product not found, redirect to toilets listing
-  if (!product) {
-    return <Navigate to="/products/toilets" replace />;
+  const [product, setProduct] = useState<Product | null>(null);
+  const [related, setRelated] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!slug) return;
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', 'toilet')
+      .eq('slug', slug)
+      .single()
+      .then(({ data }) => {
+        if (!data) {
+          setNotFound(true);
+        } else {
+          setProduct(data);
+          supabase
+            .from('products')
+            .select('*')
+            .eq('category', 'toilet')
+            .neq('id', data.id)
+            .limit(4)
+            .then(({ data: rel }) => setRelated(rel ?? []));
+        }
+        setLoading(false);
+      });
+  }, [slug]);
+
+  if (!slug || notFound) return <Navigate to="/products/toilets" replace />;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#001f54]" />
+      </div>
+    );
   }
-  
-  // Render the product using the reusable layout
+
+  if (!product) return <Navigate to="/products/toilets" replace />;
+
+  const specsRecord: Record<string, string> = {};
+  (product.specs ?? []).forEach(s => { specsRecord[s.label] = s.value; });
+
   return (
     <ProductDetailLayout
       name={product.name}
-      brand={product.brand}
+      brand={product.brand ?? ''}
       category={product.category}
       images={product.images}
-      shortDescription={product.shortDescription}
-      description={product.description}
-      specs={product.specs}
-      tags={product.tags}
+      description={product.description ?? ''}
+      shortDescription={product.short_description ?? product.description?.substring(0, 150) ?? ''}
+      specs={specsRecord}
+      currentProductId={product.id}
+      relatedProducts={related.map(r => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        images: r.images,
+        category: r.category,
+      }))}
       seoTags={['Smart Toilets', 'Water Saving', 'Premium Ceramic']}
     />
   );
 };
 
 export default ToiletDetailPage;
-
