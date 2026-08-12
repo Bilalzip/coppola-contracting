@@ -15,6 +15,8 @@ const QuoteForm: React.FC = () => {
     address: '',
     preferredContact: 'email'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -26,6 +28,7 @@ const QuoteForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const { error } = await supabase.from('leads').insert({
       type: 'quote',
       name: `${formData.firstName} ${formData.lastName}`,
@@ -38,13 +41,46 @@ const QuoteForm: React.FC = () => {
       address: formData.address || null,
       preferred_contact: formData.preferredContact || null,
     });
-    if (!error) {
-      alert("Quote request sent successfully! We'll be in touch within 24 hours.");
+    if (error) {
+      setSubmitStatus('error');
+    } else {
+      setSubmitStatus('success');
+      setFormData({
+        firstName: '', lastName: '', email: '', phone: '',
+        projectType: '', timeline: '', budget: '', description: '',
+        address: '', preferredContact: 'email',
+      });
     }
+    setIsSubmitting(false);
   };
+
+  if (submitStatus === 'success') {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Quote Request Sent!</h3>
+        <p className="text-gray-600 mb-6">Thank you! We've received your request and will be in touch within 24 hours.</p>
+        <button
+          onClick={() => setSubmitStatus('idle')}
+          className="text-sm text-blue-800 hover:underline"
+        >
+          Submit another request
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-8">
+      {submitStatus === 'error' && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">Something went wrong. Please try again or email us directly at info@coppolacontracting.net</p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Personal Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -259,10 +295,11 @@ const QuoteForm: React.FC = () => {
           </p>
           <button
             type="submit"
-            className="bg-blue-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-900 transition-colors flex items-center"
+            disabled={isSubmitting}
+            className="bg-blue-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-900 transition-colors flex items-center disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Send className="h-5 w-5 mr-2" />
-            Send Quote Request
+            {isSubmitting ? 'Sending...' : 'Send Quote Request'}
           </button>
         </div>
       </form>

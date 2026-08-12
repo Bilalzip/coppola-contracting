@@ -269,7 +269,7 @@ export default function ContactUs() {
           <div className="rounded-[2rem] bg-gray-100/70 dark:bg-white/[0.03] border border-oxford-blue/5 dark:border-white/10 p-2">
             <div className="w-full h-[420px] rounded-[1.6rem] overflow-hidden">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2675.1234567890!2d-89.2477!3d48.3822!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4d5921234567890%3A0x1234567890abcdef!2s269%20Red%20River%20Rd%2C%20Thunder%20Bay%2C%20ON%20P7B%201A9!5e0!3m2!1sen!2sca!4v1234567890123!5m2!1sen!2sca"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2675.892!2d-89.24341!3d48.38476!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4d592b1c9f6f6f6f%3A0x1a2b3c4d5e6f7a8b!2s269%20Red%20River%20Rd%2C%20Thunder%20Bay%2C%20ON%20P7B%201A9%2C%20Canada!5e0!3m2!1sen!2sca!4v1700000000000!5m2!1sen!2sca"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
