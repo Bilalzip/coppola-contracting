@@ -2,9 +2,18 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SplitText from '../../components/ui/SplitText';
+import { usePageSections } from '../../lib/usePageSections';
 
 const OurExpertise: React.FC = () => {
   const navigate = useNavigate();
+  const { section } = usePageSections('our-expertise');
+  const hero = section('hero', {
+    heading: 'Our works',
+    body: 'A testament to precision, craftsmanship, and elegant design in every project we touch',
+    heading_color: '#1A1A1A',
+    body_color: '#5D6D74',
+    items: ['Luxury', 'Bespoke', 'Refined'],
+  });
 
   // Navigation handler for expertise cards
   const handleExpertiseClick = (section: string) => {
@@ -97,9 +106,10 @@ const OurExpertise: React.FC = () => {
           <div className="text-center space-y-8">
             {/* Main Heading with SplitText */}
             <SplitText
-              text="Our works"
+              text={hero.heading}
               tag="h1"
-              className="text-page-title font-normal text-[#1A1A1A] dark:text-white font-serif tracking-tight"
+              className="text-page-title font-normal font-serif tracking-tight"
+              style={{ color: hero.heading_color }}
               splitType="chars"
               delay={30}
               duration={0.8}
@@ -108,15 +118,16 @@ const OurExpertise: React.FC = () => {
               threshold={0.1}
               textAlign="center"
             />
-            
+
             {/* Description */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-base md:text-lg text-[#5D6D74] dark:text-[#D1D5DB] max-w-3xl mx-auto leading-relaxed font-['Poppins',sans-serif]"
+              className="text-base md:text-lg max-w-3xl mx-auto leading-relaxed font-['Poppins',sans-serif]"
+              style={{ color: hero.body_color }}
             >
-              A testament to precision, craftsmanship, and elegant design in every project we touch
+              {hero.body}
             </motion.p>
 
             {/* Tags */}
@@ -126,15 +137,11 @@ const OurExpertise: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.6 }}
               className="flex flex-wrap items-center justify-center gap-3"
             >
-              <span className="px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[#2A2A2A] rounded-md text-sm font-medium text-[#1A1A1A] dark:text-white font-['Poppins',sans-serif]">
-                Luxury
-              </span>
-              <span className="px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[#2A2A2A] rounded-md text-sm font-medium text-[#1A1A1A] dark:text-white font-['Poppins',sans-serif]">
-                Bespoke
-              </span>
-              <span className="px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[#2A2A2A] rounded-md text-sm font-medium text-[#1A1A1A] dark:text-white font-['Poppins',sans-serif]">
-                Refined
-              </span>
+              {(hero.items as string[]).map((tag) => (
+                <span key={tag} className="px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[#2A2A2A] rounded-md text-sm font-medium text-[#1A1A1A] dark:text-white font-['Poppins',sans-serif]">
+                  {tag}
+                </span>
+              ))}
             </motion.div>
           </div>
         </div>

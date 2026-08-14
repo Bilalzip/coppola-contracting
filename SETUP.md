@@ -51,13 +51,14 @@ This creates three tables:
 
 ---
 
-## 3. Supabase Storage (Images)
+## 3. Supabase Storage (Images & Video)
 
-Two storage buckets need to be created manually for product and gallery image uploads.
+Three storage buckets need to be created manually: for product images, gallery images, and hero background video uploads.
 
 1. Go to Supabase dashboard → **Storage**
 2. Click **New bucket** → name it `product-images` → set to **Public** → Create
 3. Click **New bucket** again → name it `gallery-images` → set to **Public** → Create
+4. Click **New bucket** again → name it `videos` → set to **Public** → Create
 
 Then add upload permissions so the admin panel can write to them. Go to **SQL Editor** and run:
 
@@ -103,6 +104,27 @@ create policy "Public read gallery images"
 on storage.objects for select
 to public
 using (bucket_id = 'gallery-images');
+
+-- Same for hero background videos
+create policy "Admin upload videos"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'videos');
+
+create policy "Admin update videos"
+on storage.objects for update
+to authenticated
+using (bucket_id = 'videos');
+
+create policy "Admin delete videos"
+on storage.objects for delete
+to authenticated
+using (bucket_id = 'videos');
+
+create policy "Public read videos"
+on storage.objects for select
+to public
+using (bucket_id = 'videos');
 ```
 
 ---
@@ -114,7 +136,7 @@ The admin panel is at `/admin` on your website. It requires a login.
 To create your admin login:
 1. Go to Supabase dashboard → **Authentication** → **Users**
 2. Click **Invite user** (or **Add user**)
-3. Enter `admin@coppolahome.ca` and set a strong password
+3. Enter `info@coppolahome.ca` and set a strong password
 4. Click Create
 
 You can now log into the admin panel at `yoursite.com/admin` with those credentials.
@@ -125,7 +147,7 @@ You can now log into the admin panel at `yoursite.com/admin` with those credenti
 
 ## 5. Email Notifications
 
-Every time a customer submits the contact form or quote form, you need to receive an email at `admin@coppolahome.ca`. This is handled by a Supabase Edge Function called `notify-lead` (the code lives at `supabase/functions/notify-lead/index.ts`).
+Every time a customer submits the contact form or quote form, you need to receive an email at `info@coppolahome.ca`. This is handled by a Supabase Edge Function called `notify-lead` (the code lives at `supabase/functions/notify-lead/index.ts`).
 
 It uses a free service called **Resend** to send the emails.
 

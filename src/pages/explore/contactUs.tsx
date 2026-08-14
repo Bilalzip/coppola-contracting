@@ -4,18 +4,8 @@ import { Facebook, Instagram, Linkedin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Button from '../../components/ui/Button';
 import { supabase } from '../../lib/supabase';
-
-const socials = [
-  { label: 'Facebook', Icon: Facebook },
-  { label: 'Instagram', Icon: Instagram },
-  { label: 'LinkedIn', Icon: Linkedin },
-];
-
-const businessHours = [
-  { day: 'Monday – Friday', time: '8:00 AM – 6:00 PM' },
-  { day: 'Saturday', time: '9:00 AM – 4:00 PM' },
-  { day: 'Sunday', time: 'Closed' },
-];
+import { useSiteSettings } from '../../lib/useSiteSettings';
+import { usePageSections } from '../../lib/usePageSections';
 
 const labelClass =
   "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-['Poppins',sans-serif]";
@@ -24,6 +14,20 @@ const fieldClass =
   "w-full rounded-lg bg-gray-50 dark:bg-white/[0.04] border border-transparent dark:border-white/10 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-oxford-blue/30 focus:bg-white dark:focus:bg-white/[0.07] transition-colors duration-200 font-['Poppins',sans-serif]";
 
 export default function ContactUs() {
+  const settings = useSiteSettings();
+  const { section } = usePageSections('contact');
+  const hero = section('hero', {
+    heading: 'Get In Touch',
+    body: "Have a question or ready to start your project? We're here to help bring your vision to life.",
+    heading_color: '#111827',
+    body_color: '#4B5563',
+  });
+  const socials = [
+    { label: 'Facebook', Icon: Facebook, href: settings.facebook_url },
+    { label: 'Instagram', Icon: Instagram, href: settings.instagram_url },
+    { label: 'LinkedIn', Icon: Linkedin, href: settings.linkedin_url },
+  ].filter((s) => s.href);
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -77,21 +81,25 @@ export default function ContactUs() {
       >
         <div className="text-center max-w-3xl mx-auto">
           <motion.h1
-            className="text-page-title font-semibold text-gray-900 dark:text-white mb-6 italic"
-            style={{ fontFamily: "'EB Garamond', serif" }}
+            className="text-page-title font-semibold mb-6 italic"
+            style={{ fontFamily: "'EB Garamond', serif", color: hero.heading_color }}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            Get In <span style={{ background: 'linear-gradient(135deg, #4a90e2 0%, #001f54 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Touch</span>
+            {hero.heading.split(' ').slice(0, -1).join(' ')}{' '}
+            <span style={{ background: 'linear-gradient(135deg, #4a90e2 0%, #001f54 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              {hero.heading.split(' ').slice(-1)}
+            </span>
           </motion.h1>
           <motion.p
-            className="text-lg text-gray-600 dark:text-gray-400 font-['Poppins',sans-serif]"
+            className="text-lg font-['Poppins',sans-serif]"
+            style={{ color: hero.body_color }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.4 }}
           >
-            Have a question or ready to start your project? We're here to help bring your vision to life.
+            {hero.body}
           </motion.p>
         </div>
       </motion.div>
@@ -116,9 +124,9 @@ export default function ContactUs() {
                   Business Hours
                 </p>
                 <dl className="space-y-2 max-w-xs">
-                  {businessHours.map(({ day, time }) => (
-                    <div key={day} className="flex justify-between gap-4">
-                      <dt className="text-sm text-gray-600 dark:text-gray-400 font-['Poppins',sans-serif]">{day}</dt>
+                  {settings.hours.map(({ days, time }) => (
+                    <div key={days} className="flex justify-between gap-4">
+                      <dt className="text-sm text-gray-600 dark:text-gray-400 font-['Poppins',sans-serif]">{days}</dt>
                       <dd className="text-sm text-gray-900 dark:text-white font-['Poppins',sans-serif]">{time}</dd>
                     </div>
                   ))}
@@ -129,35 +137,39 @@ export default function ContactUs() {
               <div className="mt-12 lg:mt-auto lg:pt-12">
                 <div className="space-y-1.5 font-['Poppins',sans-serif]">
                   <a
-                    href="mailto:admin@coppolahome.ca"
+                    href={`mailto:${settings.email}`}
                     className="block text-sm text-gray-900 dark:text-white hover:text-oxford-blue dark:hover:text-gray-300 transition-colors"
                   >
-                    admin@coppolahome.ca
+                    {settings.email}
                   </a>
                   <a
-                    href="tel:+18073459989"
+                    href={`tel:${settings.phone.replace(/[^+\d]/g, '')}`}
                     className="block text-sm text-gray-900 dark:text-white hover:text-oxford-blue dark:hover:text-gray-300 transition-colors"
                   >
-                    +1 (807) 345 9989
+                    {settings.phone}
                   </a>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    269 Red River Rd, Suite 116 #1040<br />
-                    Thunder Bay ON, P7B 1A9, Canada
+                    {settings.address_line1}<br />
+                    {settings.address_line2}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2.5 mt-6">
-                  {socials.map(({ label, Icon }) => (
-                    <a
-                      key={label}
-                      href="#"
-                      aria-label={label}
-                      className="w-10 h-10 rounded-xl bg-white dark:bg-white/[0.06] border border-oxford-blue/10 dark:border-white/10 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-[#1a1d2e] hover:text-white hover:border-transparent transition-all duration-300"
-                    >
-                      <Icon className="w-4 h-4" />
-                    </a>
-                  ))}
-                </div>
+                {socials.length > 0 && (
+                  <div className="flex items-center gap-2.5 mt-6">
+                    {socials.map(({ label, Icon, href }) => (
+                      <a
+                        key={label}
+                        href={href!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={label}
+                        className="w-10 h-10 rounded-xl bg-white dark:bg-white/[0.06] border border-oxford-blue/10 dark:border-white/10 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-[#1a1d2e] hover:text-white hover:border-transparent transition-all duration-300"
+                      >
+                        <Icon className="w-4 h-4" />
+                      </a>
+                    ))}
+                  </div>
+                )}
 
                 <Link to="/quote" className="inline-block mt-6">
                   <Button variant="primary" size="sm">

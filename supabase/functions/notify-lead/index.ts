@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!;
-const TO_EMAIL = 'admin@coppolahome.ca';
+const TO_EMAIL = 'info@coppolahome.ca';
 const FROM_EMAIL = 'Coppola Home <noreply@coppolacontracting.net>';
 
 serve(async (req) => {

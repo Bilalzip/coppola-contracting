@@ -3,8 +3,24 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SplitText from '../components/ui/SplitText';
 import Button from '../components/ui/Button';
+import { usePageSections } from '../lib/usePageSections';
 
 const Products: React.FC = () => {
+  const { section } = usePageSections('products');
+  const hero = section('hero', {
+    heading: 'Our Products',
+    body: 'Discover our complete collection of premium kitchen and bathroom products',
+    image_url: '/assets/gallery/landing-header-carousel-image-10.jpg',
+    heading_color: '#FFFFFF',
+    body_color: 'rgba(255,255,255,0.9)',
+  });
+  const cta = section('cta', {
+    heading: 'Need Help Choosing?',
+    body: 'Our experts are here to help you find the perfect products for your project',
+    heading_color: '#111827',
+    body_color: '#4B5563',
+  });
+
   useEffect(() => {
     document.title = 'Our Products | Coppola Home';
   }, []);
@@ -88,7 +104,7 @@ const Products: React.FC = () => {
           transition={{ duration: 1.5, ease: 'easeOut' }}
         >
           <img
-            src="/assets/gallery/landing-header-carousel-image-10.jpg"
+            src={hero.image_url}
             alt="Premium kitchen and bathroom products"
             className="w-full h-full object-cover"
           />
@@ -99,16 +115,17 @@ const Products: React.FC = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
           <div className="max-w-3xl">
             <SplitText
-              text="Our Products"
+              text={hero.heading}
               tag="h1"
-              className="text-page-title font-normal text-white mb-4 font-serif"
+              className="text-page-title font-normal mb-4 font-serif"
+              style={{ color: hero.heading_color }}
               splitType="chars"
               delay={30}
               duration={0.8}
               textAlign="center"
             />
-            <p className="text-base text-white/90 font-secondary">
-              Discover our complete collection of premium kitchen and bathroom products
+            <p className="text-base font-secondary" style={{ color: hero.body_color }}>
+              {hero.body}
             </p>
           </div>
         </div>
@@ -179,16 +196,17 @@ const Products: React.FC = () => {
       <section className="py-20 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <SplitText
-            text="Need Help Choosing?"
+            text={cta.heading}
             tag="h2"
-            className="text-4xl md:text-5xl font-normal text-gray-900 dark:text-white mb-4 font-serif"
+            className="text-4xl md:text-5xl font-normal mb-4 font-serif"
+            style={{ color: cta.heading_color }}
             splitType="chars"
             delay={30}
             duration={0.7}
             textAlign="center"
           />
-          <p className="text-base text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto font-secondary">
-            Our experts are here to help you find the perfect products for your project
+          <p className="text-base mb-8 max-w-2xl mx-auto font-secondary" style={{ color: cta.body_color }}>
+            {cta.body}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link to="/contact">

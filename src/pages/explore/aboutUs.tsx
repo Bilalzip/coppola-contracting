@@ -4,10 +4,62 @@ import { motion } from 'framer-motion';
 import SplitText from '../../components/ui/SplitText';
 import Button from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { usePageSections } from '../../lib/usePageSections';
+
+const VALUE_ICONS = [Heart, Award, Users, CheckCircle];
+const WHY_CHOOSE_ICONS = [Home, Users, Award, Clock, CheckCircle, Headphones];
 
 const AboutUs = () => {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const navigate = useNavigate();
+  const { section } = usePageSections('about');
+
+  const hero = section('hero', {
+    heading: 'Coppola Home',
+    subheading: 'Premium Kitchen & Bathroom Showroom',
+    body: "We are a trusted destination for discerning homeowners, designers, and builders seeking thoughtfully selected products that elevate the everyday.",
+    heading_color: '#FFFFFF',
+    subheading_color: 'rgba(255,255,255,0.9)',
+    body_color: 'rgba(255,255,255,0.9)',
+  });
+  const story = section('story', {
+    heading: 'A Legacy of Excellence',
+    subheading: 'Our Story',
+    body: "At Coppola Home, we bring over two decades of expertise in transforming kitchens and bathrooms into spaces of unparalleled elegance and functionality. Founded on principles of meticulous craftsmanship and unwavering dedication to quality, we've established ourselves as Thunder Bay's premier destination for luxury home interiors.\n\nOur showroom showcases an extensive collection of premium products from the world's most respected manufacturers. From custom cabinetry and millwork to designer fixtures and hardware, every piece is carefully selected to meet our exacting standards.",
+    image_url: '/assets/site/coppola-about-banner-image .jpg',
+    heading_color: '#2C3539',
+    subheading_color: '#5D6D74',
+    body_color: '#2C3539',
+  });
+  const values = section('values', {
+    heading: 'What We Stand For',
+    subheading: 'Our Values',
+    body: 'Our core values guide everything we do',
+    heading_color: '#2C3539',
+    subheading_color: '#5D6D74',
+    body_color: '#5D6D74',
+    items: [
+      { title: 'Passion', description: 'We love what we do and it shows in every project' },
+      { title: 'Excellence', description: 'Commitment to the highest standards of quality' },
+      { title: 'Partnership', description: 'Building lasting relationships with our clients' },
+      { title: 'Integrity', description: 'Honest, transparent, and reliable service' },
+    ],
+  });
+  const whyChoose = section('why_choose', {
+    heading: 'Why Choose Coppola Home',
+    subheading: 'Why Choose Us',
+    heading_color: '#2C3539',
+    subheading_color: '#5D6D74',
+    items: [
+      { title: 'Extensive Showroom', description: 'Explore our 10,000+ sq ft showroom featuring the latest in kitchen and bathroom design' },
+      { title: 'Expert Consultation', description: 'Our knowledgeable team provides personalized guidance for your project' },
+      { title: 'Premium Brands', description: 'We partner with industry-leading manufacturers to bring you the best products' },
+      { title: 'Timely Service', description: 'Efficient project management ensuring your timeline is met' },
+      { title: 'Quality Assured', description: 'Every product meets our rigorous standards for durability and beauty' },
+      { title: 'Ongoing Support', description: 'We are here for you from initial consultation through installation and beyond' },
+    ],
+  });
+  const storyParagraphs = story.body.split('\n\n');
 
   useEffect(() => {
     document.title = 'About Us | Coppola Home';
@@ -53,7 +105,7 @@ const AboutUs = () => {
           transition={{ duration: 1.5, ease: "easeOut" }}
         >
           <img
-            src="/assets/site/coppola-about-banner-image .jpg"
+            src={hero.image_url}
             alt="Coppola Home luxury kitchen and bathroom showroom"
             className="w-full h-full object-cover"
           />
@@ -63,9 +115,10 @@ const AboutUs = () => {
         {/* Hero Content */}
         <div className="relative h-full flex flex-col items-center justify-center text-center px-6 z-10">
           <SplitText
-            text="Coppola Home"
+            text={hero.heading}
             tag="h1"
-            className="text-page-title font-normal text-white mb-6 font-serif"
+            className="text-page-title font-normal mb-6 font-serif"
+            style={{ color: hero.heading_color }}
             splitType="chars"
             delay={40}
             duration={0.8}
@@ -74,23 +127,25 @@ const AboutUs = () => {
             textAlign="center"
             threshold={0.3}
           />
-          
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.8 }}
-            className="text-sm md:text-base tracking-[0.25em] text-white/90 mb-6 font-medium font-['Poppins',sans-serif] uppercase"
+            className="text-sm md:text-base tracking-[0.25em] mb-6 font-medium font-['Poppins',sans-serif] uppercase"
+            style={{ color: hero.subheading_color }}
           >
-            Premium Kitchen & Bathroom Showroom
+            {hero.subheading}
           </motion.p>
-          
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 1 }}
-            className="text-base md:text-lg text-white/90 max-w-3xl leading-relaxed font-['Poppins',sans-serif]"
+            className="text-base md:text-lg max-w-3xl leading-relaxed font-['Poppins',sans-serif]"
+            style={{ color: hero.body_color }}
           >
-            We are a trusted destination for discerning homeowners, designers, and builders seeking thoughtfully selected products that elevate the everyday.
+            {hero.body}
           </motion.p>
         </div>
       </section>
@@ -109,19 +164,21 @@ const AboutUs = () => {
             >
               <div>
                 <motion.p
-                  className="text-xs md:text-sm font-medium text-[#5D6D74] dark:text-[#D1D5DB] mb-4 tracking-[0.2em] uppercase font-['Poppins',sans-serif]"
+                  className="text-xs md:text-sm font-medium mb-4 tracking-[0.2em] uppercase font-['Poppins',sans-serif]"
+                  style={{ color: story.subheading_color }}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
                   viewport={{ once: true }}
                 >
-                  Our Story
+                  {story.subheading}
                 </motion.p>
-                
+
                 <SplitText
-                  text="A Legacy of Excellence"
+                  text={story.heading}
                   tag="h2"
-                  className="text-4xl md:text-5xl lg:text-6xl font-normal text-[#2C3539] dark:text-[#FFFFFF] leading-tight font-serif"
+                  className="text-4xl md:text-5xl lg:text-6xl font-normal leading-tight font-serif"
+                  style={{ color: story.heading_color }}
                   splitType="chars"
                   delay={30}
                   duration={0.8}
@@ -138,13 +195,11 @@ const AboutUs = () => {
                 transition={{ duration: 0.8, delay: 0.4 }}
                 viewport={{ once: true }}
               >
-                <p className="text-base md:text-lg text-[#2C3539] dark:text-[#F9FAFB] leading-relaxed font-['Poppins',sans-serif]">
-                  At Coppola Home, we bring over two decades of expertise in transforming kitchens and bathrooms into spaces of unparalleled elegance and functionality. Founded on principles of meticulous craftsmanship and unwavering dedication to quality, we've established ourselves as Thunder Bay's premier destination for luxury home interiors.
-                </p>
-                
-                <p className="text-base md:text-lg text-[#2C3539] dark:text-[#F9FAFB] leading-relaxed font-['Poppins',sans-serif]">
-                  Our showroom showcases an extensive collection of premium products from the world's most respected manufacturers. From custom cabinetry and millwork to designer fixtures and hardware, every piece is carefully selected to meet our exacting standards.
-                </p>
+                {storyParagraphs.map((paragraph, i) => (
+                  <p key={i} className="text-base md:text-lg leading-relaxed font-['Poppins',sans-serif]" style={{ color: story.body_color }}>
+                    {paragraph}
+                  </p>
+                ))}
               </motion.div>
 
               <motion.div 
@@ -176,7 +231,7 @@ const AboutUs = () => {
             >
               <div className="relative h-[500px] lg:h-[600px] rounded-3xl overflow-hidden shadow-2xl">
                 <img
-                  src="/assets/site/coppola-about-banner-image .jpg"
+                  src={story.image_url}
                   alt="Coppola Home premium kitchen interior showcase"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                 />
@@ -201,19 +256,21 @@ const AboutUs = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <motion.p
-              className="text-xs md:text-sm font-medium text-[#5D6D74] dark:text-[#D1D5DB] mb-4 tracking-[0.2em] uppercase font-['Poppins',sans-serif]"
+              className="text-xs md:text-sm font-medium mb-4 tracking-[0.2em] uppercase font-['Poppins',sans-serif]"
+              style={{ color: values.subheading_color }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              Our Values
+              {values.subheading}
             </motion.p>
-            
+
             <SplitText
-              text="What We Stand For"
+              text={values.heading}
               tag="h2"
-              className="text-4xl md:text-5xl lg:text-6xl font-normal text-[#2C3539] dark:text-[#FFFFFF] mb-6 font-serif"
+              className="text-4xl md:text-5xl lg:text-6xl font-normal mb-6 font-serif"
+              style={{ color: values.heading_color }}
               splitType="chars"
               delay={30}
               duration={0.8}
@@ -222,42 +279,22 @@ const AboutUs = () => {
               textAlign="center"
               threshold={0.3}
             />
-            
+
             <motion.p
-              className="text-base md:text-lg text-[#5D6D74] dark:text-[#D1D5DB] max-w-2xl mx-auto font-['Poppins',sans-serif]"
+              className="text-base md:text-lg max-w-2xl mx-auto font-['Poppins',sans-serif]"
+              style={{ color: values.body_color }}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.3 }}
               viewport={{ once: true }}
             >
-              Our core values guide everything we do
+              {values.body}
             </motion.p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-            {[
-              {
-                icon: Heart,
-                title: 'Passion',
-                description: 'We love what we do and it shows in every project'
-              },
-              {
-                icon: Award,
-                title: 'Excellence',
-                description: 'Commitment to the highest standards of quality'
-              },
-              {
-                icon: Users,
-                title: 'Partnership',
-                description: 'Building lasting relationships with our clients'
-              },
-              {
-                icon: CheckCircle,
-                title: 'Integrity',
-                description: 'Honest, transparent, and reliable service'
-              }
-            ].map((value, index) => {
-              const Icon = value.icon;
+            {(values.items as { title: string; description: string }[]).map((value, index) => {
+              const Icon = VALUE_ICONS[index % VALUE_ICONS.length];
               return (
                 <motion.div
                   key={index}
@@ -293,19 +330,21 @@ const AboutUs = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <motion.p
-              className="text-xs md:text-sm font-medium text-[#5D6D74] dark:text-[#D1D5DB] mb-4 tracking-[0.2em] uppercase font-['Poppins',sans-serif]"
+              className="text-xs md:text-sm font-medium mb-4 tracking-[0.2em] uppercase font-['Poppins',sans-serif]"
+              style={{ color: whyChoose.subheading_color }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              Why Choose Us
+              {whyChoose.subheading}
             </motion.p>
-            
+
             <SplitText
-              text="Why Choose Coppola Home"
+              text={whyChoose.heading}
               tag="h2"
-              className="text-4xl md:text-5xl lg:text-6xl font-normal text-[#2C3539] dark:text-[#FFFFFF] font-serif"
+              className="text-4xl md:text-5xl lg:text-6xl font-normal font-serif"
+              style={{ color: whyChoose.heading_color }}
               splitType="chars"
               delay={30}
               duration={0.8}
@@ -317,39 +356,8 @@ const AboutUs = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
-            {[
-              {
-                icon: Home,
-                title: 'Extensive Showroom',
-                description: 'Explore our 10,000+ sq ft showroom featuring the latest in kitchen and bathroom design'
-              },
-              {
-                icon: Users,
-                title: 'Expert Consultation',
-                description: 'Our knowledgeable team provides personalized guidance for your project'
-              },
-              {
-                icon: Award,
-                title: 'Premium Brands',
-                description: 'We partner with industry-leading manufacturers to bring you the best products'
-              },
-              {
-                icon: Clock,
-                title: 'Timely Service',
-                description: 'Efficient project management ensuring your timeline is met'
-              },
-              {
-                icon: CheckCircle,
-                title: 'Quality Assured',
-                description: 'Every product meets our rigorous standards for durability and beauty'
-              },
-              {
-                icon: Headphones,
-                title: 'Ongoing Support',
-                description: 'We are here for you from initial consultation through installation and beyond'
-              }
-            ].map((feature, index) => {
-              const Icon = feature.icon;
+            {(whyChoose.items as { title: string; description: string }[]).map((feature, index) => {
+              const Icon = WHY_CHOOSE_ICONS[index % WHY_CHOOSE_ICONS.length];
               return (
                 <motion.div
                   key={index}

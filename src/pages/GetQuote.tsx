@@ -1,8 +1,17 @@
 import { useState } from 'react';
 import { ArrowRight, Upload, X } from 'lucide-react';
 import Button from '../components/ui/Button';
+import { usePageSections } from '../lib/usePageSections';
 
 const GetQuote = () => {
+  const { section } = usePageSections('get-quote');
+  const hero = section('hero', {
+    heading: 'Request your personalized quote',
+    body: 'Share a few project details below and our team will prepare a tailored estimate and next steps for your home transformation.',
+    heading_color: '#2C3539',
+    body_color: '#5D6D74',
+  });
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -78,16 +87,16 @@ const GetQuote = () => {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8 sm:mb-10 md:mb-12">
           <h1
-            className="text-page-title font-medium text-[#2C3539] dark:text-[#F9FAFB] mb-4 sm:mb-5 md:mb-6 leading-tight"
-            style={{ fontFamily: 'Poppins, sans-serif' }}
+            className="text-page-title font-medium mb-4 sm:mb-5 md:mb-6 leading-tight"
+            style={{ fontFamily: 'Poppins, sans-serif', color: hero.heading_color }}
           >
-            Request your personalized quote
+            {hero.heading}
           </h1>
           <p
-            className="text-base sm:text-lg text-[#5D6D74] dark:text-[#D1D5DB] max-w-2xl mx-auto px-4"
-            style={{ fontFamily: 'Poppins, sans-serif' }}
+            className="text-base sm:text-lg max-w-2xl mx-auto px-4"
+            style={{ fontFamily: 'Poppins, sans-serif', color: hero.body_color }}
           >
-            Share a few project details below and our team will prepare a tailored estimate and next steps for your home transformation.
+            {hero.body}
           </p>
         </div>
 

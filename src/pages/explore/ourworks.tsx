@@ -1,7 +1,22 @@
 import { motion } from 'framer-motion';
 import { Grid, Home, Building2, Package } from 'lucide-react';
+import { usePageSections } from '../../lib/usePageSections';
 
 const OurWorks = () => {
+  const { section } = usePageSections('our-works');
+  const hero = section('hero', {
+    heading: 'Our Work',
+    body: 'Explore our portfolio of exceptional projects that showcase our commitment to quality craftsmanship, innovative design, and attention to detail.',
+    heading_color: '#111827',
+    body_color: '#4B5563',
+  });
+  const emptyState = section('empty_state', {
+    heading: 'Portfolio Coming Soon',
+    body: "We're currently curating our portfolio to showcase our finest residential and commercial projects. Each project represents our dedication to exceptional craftsmanship and innovative design solutions.",
+    heading_color: '#111827',
+    body_color: '#4B5563',
+  });
+
   // Sample projects data structure for future implementation
   const projects = [
     // Projects will be dynamically added through admin panel
@@ -37,22 +52,26 @@ const OurWorks = () => {
           </motion.div>
           
           <motion.h1
-            className="text-page-title font-semibold text-gray-900 dark:text-white mb-6 italic"
-            style={{ fontFamily: "'EB Garamond', serif" }}
+            className="text-page-title font-semibold mb-6 italic"
+            style={{ fontFamily: "'EB Garamond', serif", color: hero.heading_color }}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            Our <span style={{ background: 'linear-gradient(135deg, #4a90e2 0%, #001f54 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Work</span>
+            {hero.heading.split(' ').slice(0, -1).join(' ')}{' '}
+            <span style={{ background: 'linear-gradient(135deg, #4a90e2 0%, #001f54 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              {hero.heading.split(' ').slice(-1)}
+            </span>
           </motion.h1>
-          
+
           <motion.p
-            className="text-lg text-gray-600 dark:text-gray-400 font-['Poppins',sans-serif] leading-relaxed"
+            className="text-lg font-['Poppins',sans-serif] leading-relaxed"
+            style={{ color: hero.body_color }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.4 }}
           >
-            Explore our portfolio of exceptional projects that showcase our commitment to quality craftsmanship, innovative design, and attention to detail.
+            {hero.body}
           </motion.p>
         </div>
       </motion.div>
@@ -163,13 +182,16 @@ const OurWorks = () => {
               </div>
               
               {/* Heading */}
-              <h3 className="text-3xl font-semibold text-gray-900 dark:text-white mb-4 font-['EB Garamond',serif] italic">
-                Portfolio <span style={{ background: 'linear-gradient(135deg, #4a90e2 0%, #001f54 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Coming Soon</span>
+              <h3 className="text-3xl font-semibold mb-4 font-['EB Garamond',serif] italic" style={{ color: emptyState.heading_color }}>
+                {emptyState.heading.split(' ').slice(0, -2).join(' ')}{' '}
+                <span style={{ background: 'linear-gradient(135deg, #4a90e2 0%, #001f54 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                  {emptyState.heading.split(' ').slice(-2).join(' ')}
+                </span>
               </h3>
-              
+
               {/* Description */}
-              <p className="text-base text-gray-600 dark:text-gray-400 font-['Poppins',sans-serif] leading-relaxed mb-8">
-                We're currently curating our portfolio to showcase our finest residential and commercial projects. Each project represents our dedication to exceptional craftsmanship and innovative design solutions.
+              <p className="text-base font-['Poppins',sans-serif] leading-relaxed mb-8" style={{ color: emptyState.body_color }}>
+                {emptyState.body}
               </p>
               
               {/* Info Cards */}
