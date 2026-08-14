@@ -1,8 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!;
-const TO_EMAIL = 'info@coppolahome.ca';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const FROM_EMAIL = 'Coppola Home <noreply@coppolacontracting.net>';
+// Used only if site_settings has no notification emails configured yet.
+const FALLBACK_TO_EMAIL = 'info@coppolahome.ca';
 
 serve(async (req) => {
   try {
@@ -13,6 +17,17 @@ serve(async (req) => {
     if (!lead) {
       return new Response('No record in payload', { status: 400 });
     }
+
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: settings } = await supabaseAdmin
+      .from('site_settings')
+      .select('notification_emails')
+      .eq('id', true)
+      .single();
+
+    const recipients = settings?.notification_emails?.length
+      ? settings.notification_emails
+      : [FALLBACK_TO_EMAIL];
 
     const isQuote = lead.type === 'quote';
     const subject = isQuote
@@ -104,7 +119,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: FROM_EMAIL,
-        to: [TO_EMAIL],
+        to: recipients,
         reply_to: lead.email,
         subject,
         html,

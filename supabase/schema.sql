@@ -122,11 +122,14 @@ create table public.site_settings (
   facebook_url text,
   instagram_url text,
   linkedin_url text,
+  -- Recipients for contact/quote form lead notification emails, managed
+  -- from Admin -> Settings instead of hardcoded in the notify-lead function.
+  notification_emails text[] not null default '{}',
   updated_at timestamptz default now(),
   constraint site_settings_singleton check (id)
 );
 
-insert into public.site_settings (id, phone, email, address_line1, address_line2, hours, hours_note)
+insert into public.site_settings (id, phone, email, address_line1, address_line2, hours, hours_note, notification_emails)
 values (
   true,
   '+1 (807) 345 9989',
@@ -138,7 +141,8 @@ values (
     {"days": "Saturday", "time": "9:30 AM – 2:00 PM"},
     {"days": "Sunday", "time": "Closed"}
   ]'::jsonb,
-  '*Closed on statutory holidays'
+  '*Closed on statutory holidays',
+  array['info@coppolahome.ca']
 );
 
 -- Editable page content (Admin -> Appearance). One row per section of a
