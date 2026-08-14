@@ -3,43 +3,26 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SplitText from '../ui/SplitText';
+import { supabase } from '../../lib/supabase';
+import type { Testimonial } from '../../types/database';
 
 gsap.registerPlugin(ScrollTrigger);
 
-interface Testimonial {
-  id: number;
-  name: string;
-  text: string;
-}
-
-const testimonialsData: Testimonial[] = [
-  {
-    id: 1,
-    name: "Jenny Wilson",
-    text: "I absolutely love this salon! From the warm welcome to the final look, everything was perfect. The staff really listened to what I wanted feel so comfortable."
-  },
-  {
-    id: 2,
-    name: "Esther Howard",
-    text: "I absolutely love this salon! From the warm welcome to the final look, everything was perfect. The staff really listened to what I wanted feel so comfortable."
-  },
-  {
-    id: 3,
-    name: "Wade Warren",
-    text: "I absolutely love this salon! From the warm welcome to the final look, everything was perfect. The staff really listened to what I wanted feel so comfortable."
-  },
-  {
-    id: 4,
-    name: "Robert Fox",
-    text: "I absolutely love this salon! From the warm welcome to the final look, everything was perfect. The staff really listened to what I wanted feel so comfortable."
-  }
-];
-
 const Testimonials = () => {
+  const [testimonialsData, setTestimonialsData] = useState<Testimonial[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const [visibleCards, setVisibleCards] = useState(3);
+
+  useEffect(() => {
+    supabase
+      .from('testimonials')
+      .select('*')
+      .eq('featured', true)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setTestimonialsData(data ?? []));
+  }, []);
 
   useEffect(() => {
     const updateVisibleCards = () => {
@@ -99,7 +82,7 @@ const Testimonials = () => {
     }, sectionRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [testimonialsData]);
 
   const nextSlide = () => {
     setCurrentIndex((prev) =>
@@ -118,6 +101,8 @@ const Testimonials = () => {
   };
 
   const maxIndex = Math.max(0, testimonialsData.length - visibleCards);
+
+  if (testimonialsData.length === 0) return null;
 
   return (
     <section ref={sectionRef} className="py-20 px-6 transition-colors duration-300 relative border-t border-oxford-blue/10 dark:border-white/10">
@@ -192,7 +177,7 @@ const Testimonials = () => {
 
                   {/* Testimonial Text */}
                   <p className="mt-6 flex-1 font-serif text-lg leading-relaxed text-[#2C3539] dark:text-[#E5E7EB]">
-                    {testimonial.text}
+                    {testimonial.quote}
                   </p>
 
                   {/* Author Info */}

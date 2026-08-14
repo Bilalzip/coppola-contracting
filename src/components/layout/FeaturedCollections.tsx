@@ -1,131 +1,53 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, ArrowLeft, ArrowRight } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import type { Product } from '../../types/database';
 
-type FilterId = 'all' | 'faucets' | 'sinks' | 'cabinets' | 'mirrors';
+type CategoryId = Product['category'];
+type FilterId = 'all' | CategoryId;
 
 const filters: { id: FilterId; label: string }[] = [
   { id: 'all', label: 'All Products' },
-  { id: 'faucets', label: 'Faucets' },
-  { id: 'sinks', label: 'Sinks' },
-  { id: 'cabinets', label: 'Cabinets' },
-  { id: 'mirrors', label: 'Mirrors' },
+  { id: 'vanity', label: 'Vanities' },
+  { id: 'quartz', label: 'Quartz' },
+  { id: 'faucet', label: 'Faucets' },
+  { id: 'mirror', label: 'Mirrors' },
+  { id: 'sink', label: 'Sinks' },
+  { id: 'toilet', label: 'Toilets' },
+  { id: 'flooring', label: 'Flooring' },
 ];
 
-interface FeaturedItem {
-  title: string;
-  image: string;
-  href: string;
-  tags: FilterId[];
-  external?: boolean;
-}
+// Listing route per product category — matches the routes in main.tsx.
+const CATEGORY_ROUTE: Record<CategoryId, string> = {
+  vanity: '/products/vanities',
+  quartz: '/quartz-countertops',
+  faucet: '/products/faucets',
+  mirror: '/products/mirrors',
+  sink: '/products/sinks',
+  toilet: '/products/toilets',
+  flooring: '/products/flooring',
+  lighting: '/products/lighting',
+  hardware: '/hardware',
+};
 
-const items: FeaturedItem[] = [
-  {
-    title: 'In Stock',
-    image: '/assets/gallery/landing-header-carousel-image-9.png',
-    href: '/in-stock',
-    tags: [],
-  },
-  {
-    title: 'Luxury Vanities',
-    image:
-      '/Images/products/vanities-images/james-martin-vanity/brittany-30-single-vanity-in-victory-blue-single-bathroom-vanity-james-martin-vanities-select-your-top-959063.webp',
-    href: '/products/vanities',
-    tags: ['cabinets'],
-  },
-  {
-    title: 'Custom Cabinetry',
-    image: '/assets/gallery/Screenshot 2025-12-27 101328.png',
-    href: '/custom-cabinetry',
-    tags: ['cabinets'],
-  },
-  {
-    title: 'Outdoor Kitchens',
-    image: '/assets/gallery/landing-header-carousel-image-5.png',
-    href: 'https://q-boo.com/',
-    tags: [],
-    external: true,
-  },
-  {
-    title: 'Hardware',
-    image: '/assets/gallery/Screenshot 2025-12-27 100544.png',
-    href: '/hardware',
-    tags: [],
-  },
-  {
-    title: 'Kitchen Faucets',
-    image: '/assets/gallery/kitchen-faucets-card-image.avif',
-    href: '/products/faucets/kitchen',
-    tags: ['faucets'],
-  },
-  {
-    title: 'Bathroom Faucets',
-    image: '/assets/gallery/bathroom-faucets-card-image.avif',
-    href: '/products/faucets/bathroom',
-    tags: ['faucets'],
-  },
-  {
-    title: 'Shower Sets',
-    image: '/assets/gallery/Shower-set-card-image.webp',
-    href: '/products/faucets/shower',
-    tags: ['faucets'],
-  },
-  {
-    title: 'Kitchen Sinks',
-    image: '/assets/gallery/kitchen-sink-card-image.avif',
-    href: '/products/sinks/kitchen',
-    tags: ['sinks'],
-  },
-  {
-    title: 'Bathroom Sinks',
-    image: '/assets/gallery/bathroom-sink-card-image.avif',
-    href: '/products/sinks/bathroom',
-    tags: ['sinks'],
-  },
-  {
-    title: 'Undermount Sinks',
-    image: '/assets/gallery/undermount-sink-card-image.avif',
-    href: '/products/sinks/undermount',
-    tags: ['sinks'],
-  },
-  {
-    title: 'Vessel Sinks',
-    image: '/assets/gallery/vesel-sink-card-image.avif',
-    href: '/products/sinks/vessel',
-    tags: ['sinks'],
-  },
-  {
-    title: 'Modern Mirrors',
-    image: '/assets/gallery/mirros-page-morder-card.webp',
-    href: '/products/mirrors/modern',
-    tags: ['mirrors'],
-  },
-  {
-    title: 'Timeless Mirrors',
-    image: '/assets/gallery/mirror-page-timeless-card.webp',
-    href: '/products/mirrors/timeless',
-    tags: ['mirrors'],
-  },
-  {
-    title: 'Contemporary Mirrors',
-    image: '/assets/gallery/mirror-page-seemless-contemporary-card.webp',
-    href: '/products/mirrors/contemporary',
-    tags: ['mirrors'],
-  },
-  {
-    title: 'Custom Millwork',
-    image: '/assets/gallery/Screenshot 2025-12-27 101500.png',
-    href: '/commercial-millwork',
-    tags: [],
-  },
-];
+const productHref = (product: Product) => `${CATEGORY_ROUTE[product.category]}/${product.slug}`;
 
 const FeaturedCollections = () => {
+  const [products, setProducts] = useState<Product[]>([]);
   const [active, setActive] = useState<FilterId>('all');
   const trackRef = useRef<HTMLDivElement>(null);
 
-  const visible = active === 'all' ? items : items.filter((item) => item.tags.includes(active));
+  useEffect(() => {
+    supabase
+      .from('products')
+      .select('*')
+      .eq('featured', true)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setProducts(data ?? []));
+  }, []);
+
+  const visible = active === 'all' ? products : products.filter((product) => product.category === active);
 
   // One card plus its gap, so a click always lands on a card edge.
   const scrollByCard = (direction: 1 | -1) => {
@@ -135,6 +57,8 @@ const FeaturedCollections = () => {
     const step = card ? card.offsetWidth + 20 : track.clientWidth * 0.8;
     track.scrollBy({ left: step * direction, behavior: 'smooth' });
   };
+
+  if (products.length === 0) return null;
 
   return (
     <section
@@ -155,7 +79,9 @@ const FeaturedCollections = () => {
 
         {/* Filters */}
         <div className="mt-8 sm:mt-10 flex flex-wrap justify-center gap-2 sm:gap-3">
-          {filters.map((filter) => {
+          {filters
+            .filter((filter) => filter.id === 'all' || products.some((p) => p.category === filter.id))
+            .map((filter) => {
             const isActive = filter.id === active;
 
             return (
@@ -183,59 +109,38 @@ const FeaturedCollections = () => {
             ref={trackRef}
             className="no-scrollbar flex gap-5 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2"
           >
-            {visible.map((item) => {
-              const inner = (
-                <>
-                  <div className="aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800">
+            {visible.map((product) => (
+              <Link
+                key={product.id}
+                data-card
+                to={productHref(product)}
+                aria-label={`View ${product.name}`}
+                className="group block w-[240px] sm:w-[260px] flex-shrink-0 snap-start overflow-hidden rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-500"
+              >
+                <div className="aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800">
+                  {product.images[0] && (
                     <img
-                      src={item.image}
-                      alt={item.title}
+                      src={product.images[0]}
+                      alt={product.name}
                       loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-base font-normal text-gray-900 dark:text-white font-serif">
-                      {item.title}
-                    </h3>
-                    <span className="mt-2 inline-flex items-center gap-1.5 text-caption text-gray-600 dark:text-gray-400 font-secondary group-hover:text-[#001f54] dark:group-hover:text-[#0466c8] transition-colors">
-                      <span className="relative">
-                        View Collection
-                        <span className="absolute left-0 -bottom-0.5 h-[1px] w-0 bg-current transition-all duration-300 group-hover:w-full" />
-                      </span>
-                      <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="text-base font-normal text-gray-900 dark:text-white font-serif">
+                    {product.name}
+                  </h3>
+                  <span className="mt-2 inline-flex items-center gap-1.5 text-caption text-gray-600 dark:text-gray-400 font-secondary group-hover:text-[#001f54] dark:group-hover:text-[#0466c8] transition-colors">
+                    <span className="relative">
+                      View Collection
+                      <span className="absolute left-0 -bottom-0.5 h-[1px] w-0 bg-current transition-all duration-300 group-hover:w-full" />
                     </span>
-                  </div>
-                </>
-              );
-
-              const cardClass =
-                'group block w-[240px] sm:w-[260px] flex-shrink-0 snap-start overflow-hidden rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-500';
-
-              return item.external ? (
-                <a
-                  key={item.title}
-                  data-card
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`View ${item.title} collection`}
-                  className={cardClass}
-                >
-                  {inner}
-                </a>
-              ) : (
-                <Link
-                  key={item.title}
-                  data-card
-                  to={item.href}
-                  aria-label={`View ${item.title} collection`}
-                  className={cardClass}
-                >
-                  {inner}
-                </Link>
-              );
-            })}
+                    <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </span>
+                </div>
+              </Link>
+            ))}
           </div>
 
           {/* Arrows sit outside the track so they never cover a card */}

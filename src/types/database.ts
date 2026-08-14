@@ -45,3 +45,13 @@ export interface GalleryItem {
   created_at: string
   updated_at: string
 }
+
+export interface Testimonial {
+  id: string
+  name: string
+  quote: string
+  rating: number
+  featured: boolean
+  created_at: string
+  updated_at: string
+}
