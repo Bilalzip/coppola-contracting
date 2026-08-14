@@ -136,11 +136,11 @@ const Footer = () => {
                 +1 (807) 345 9989
               </a>
               <a
-                href="mailto:info@coppolacontracting.net"
+                href="mailto:admin@coppolahome.ca"
                 className={`${linkClass} break-all`}
                 style={poppins}
               >
-                info@coppolacontracting.net
+                admin@coppolahome.ca
               </a>
             </address>
           </div>

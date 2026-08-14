@@ -129,10 +129,10 @@ export default function ContactUs() {
               <div className="mt-12 lg:mt-auto lg:pt-12">
                 <div className="space-y-1.5 font-['Poppins',sans-serif]">
                   <a
-                    href="mailto:info@coppolacontracting.net"
+                    href="mailto:admin@coppolahome.ca"
                     className="block text-sm text-gray-900 dark:text-white hover:text-oxford-blue dark:hover:text-gray-300 transition-colors"
                   >
-                    info@coppolacontracting.net
+                    admin@coppolahome.ca
                   </a>
                   <a
                     href="tel:+18073459989"

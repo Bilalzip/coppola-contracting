@@ -114,7 +114,7 @@ The admin panel is at `/admin` on your website. It requires a login.
 To create your admin login:
 1. Go to Supabase dashboard → **Authentication** → **Users**
 2. Click **Invite user** (or **Add user**)
-3. Enter `info@coppolacontracting.net` and set a strong password
+3. Enter `admin@coppolahome.ca` and set a strong password
 4. Click Create
 
 You can now log into the admin panel at `yoursite.com/admin` with those credentials.
@@ -125,7 +125,7 @@ You can now log into the admin panel at `yoursite.com/admin` with those credenti
 
 ## 5. Email Notifications
 
-Every time a customer submits the contact form or quote form, you need to receive an email at `info@coppolacontracting.net`. This is handled by a Supabase Edge Function called `notify-lead` (the code lives at `supabase/functions/notify-lead/index.ts`).
+Every time a customer submits the contact form or quote form, you need to receive an email at `admin@coppolahome.ca`. This is handled by a Supabase Edge Function called `notify-lead` (the code lives at `supabase/functions/notify-lead/index.ts`).
 
 It uses a free service called **Resend** to send the emails.
 

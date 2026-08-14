@@ -78,7 +78,7 @@ const QuoteForm: React.FC = () => {
     <div className="bg-white rounded-lg shadow-lg p-8">
       {submitStatus === 'error' && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800">Something went wrong. Please try again or email us directly at info@coppolacontracting.net</p>
+          <p className="text-sm text-red-800">Something went wrong. Please try again or email us directly at admin@coppolahome.ca</p>
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-6">

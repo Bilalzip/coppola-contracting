@@ -139,7 +139,7 @@ This request was submitted through the Coppola Contracting website.
       `.trim();
 
       // Create mailto link
-      const mailtoLink = `mailto:info@coppolacontracting.net?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+      const mailtoLink = `mailto:admin@coppolahome.ca?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
       
       // Open default email client
       window.location.href = mailtoLink;
@@ -743,7 +743,7 @@ This request was submitted through the Coppola Contracting website.
                 <img src={emailIcon} alt="Email" className="h-8 w-8 text-gray-700" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Us</h3>
-               <p className="text-gray-600">info@coppolacontracting.net</p>
+               <p className="text-gray-600">admin@coppolahome.ca</p>
                <p className="text-sm text-gray-500">24/7 Response</p>
              </div>
                          <div className="text-center">
