@@ -28,7 +28,7 @@ const appearanceNavItems = [
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { signOut } = useAuth()
+  const { user, signOut } = useAuth()
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
@@ -87,7 +87,13 @@ export default function AdminLayout() {
         </div>
       </nav>
 
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-gray-700 space-y-3">
+        {user?.email && (
+          <div className="px-4">
+            <p className="text-xs text-gray-500">Signed in as</p>
+            <p className="text-sm text-gray-200 truncate" title={user.email}>{user.email}</p>
+          </div>
+        )}
         <button
           onClick={handleSignOut}
           className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"

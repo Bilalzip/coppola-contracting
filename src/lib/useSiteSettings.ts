@@ -17,6 +17,7 @@ const FALLBACK: SiteSettings = {
   facebook_url: null,
   instagram_url: null,
   linkedin_url: null,
+  notification_emails: ['info@coppolahome.ca'],
   updated_at: '',
 };
 

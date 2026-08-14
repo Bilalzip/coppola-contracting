@@ -15,6 +15,7 @@ const defaultForm: FormState = {
   facebook_url: '',
   instagram_url: '',
   linkedin_url: '',
+  notification_emails: [],
 }
 
 export default function SettingsPage() {
@@ -37,6 +38,7 @@ export default function SettingsPage() {
           facebook_url: data.facebook_url ?? '',
           instagram_url: data.instagram_url ?? '',
           linkedin_url: data.linkedin_url ?? '',
+          notification_emails: data.notification_emails ?? [],
         })
       }
       setLoading(false)
@@ -58,6 +60,21 @@ export default function SettingsPage() {
     setForm((prev) => ({ ...prev, hours: prev.hours.filter((_, i) => i !== index) }))
   }
 
+  const updateNotificationEmail = (index: number, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      notification_emails: prev.notification_emails.map((e, i) => (i === index ? value : e)),
+    }))
+  }
+
+  const addNotificationEmail = () => {
+    setForm((prev) => ({ ...prev, notification_emails: [...prev.notification_emails, ''] }))
+  }
+
+  const removeNotificationEmail = (index: number) => {
+    setForm((prev) => ({ ...prev, notification_emails: prev.notification_emails.filter((_, i) => i !== index) }))
+  }
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
@@ -73,6 +90,7 @@ export default function SettingsPage() {
       facebook_url: form.facebook_url || null,
       instagram_url: form.instagram_url || null,
       linkedin_url: form.linkedin_url || null,
+      notification_emails: form.notification_emails.map((e) => e.trim()).filter(Boolean),
     }
     const { error } = await supabase.from('site_settings').update(payload).eq('id', true)
     setSaving(false)
@@ -153,6 +171,49 @@ export default function SettingsPage() {
                 placeholder="Thunder Bay ON, P7B 1A9, Canada"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Lead notification emails */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Lead Notification Emails</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Everyone on this list gets emailed when a customer submits the contact or quote form.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={addNotificationEmail}
+              className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium flex-shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              Add email
+            </button>
+          </div>
+          <div className="space-y-2">
+            {form.notification_emails.map((email, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => updateNotificationEmail(i, e.target.value)}
+                  className={`${inputClass} flex-1`}
+                  placeholder="name@coppolahome.ca"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeNotificationEmail(i)}
+                  className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            {form.notification_emails.length === 0 && (
+              <p className="text-sm text-gray-400">No notification emails added yet — click "Add email".</p>
+            )}
           </div>
         </div>
 

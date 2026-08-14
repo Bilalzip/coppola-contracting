@@ -7,7 +7,7 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signIn } = useAuth()
+  const { signIn, signOutReason } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,6 +33,14 @@ export default function AdminLogin() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Sign in</h2>
+
+          {!error && signOutReason && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              {signOutReason === 'inactivity'
+                ? "You were signed out after a period of inactivity. Please sign in again."
+                : "Your session has expired. Please sign in again."}
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">

@@ -133,5 +133,6 @@ export interface SiteSettings {
   facebook_url: string | null
   instagram_url: string | null
   linkedin_url: string | null
+  notification_emails: string[]
   updated_at: string
 }

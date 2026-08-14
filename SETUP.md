@@ -147,7 +147,7 @@ You can now log into the admin panel at `yoursite.com/admin` with those credenti
 
 ## 5. Email Notifications
 
-Every time a customer submits the contact form or quote form, you need to receive an email at `info@coppolahome.ca`. This is handled by a Supabase Edge Function called `notify-lead` (the code lives at `supabase/functions/notify-lead/index.ts`).
+Every time a customer submits the contact form or quote form, an email is sent to everyone listed in Admin → Settings → **Lead Notification Emails**. This is handled by a Supabase Edge Function called `notify-lead` (the code lives at `supabase/functions/notify-lead/index.ts`).
 
 It uses a free service called **Resend** to send the emails.
 
@@ -204,6 +204,12 @@ This tells Supabase to call the Edge Function every time a new lead is saved.
    - **Edge Function**: `notify-lead`
 4. Click **Create webhook**
 
+> **If this fails with `schema "supabase_functions" does not exist`**: that schema is normally auto-created the first time Database Webhooks are used in a project. Go to **Database → Extensions** and make sure `pg_net` is enabled — enabling it (or toggling it off/on if already enabled) typically creates the missing schema. If it's still stuck afterward, contact Supabase support. **Until this webhook exists and is enabled, leads will save to the database but no notification email will ever be sent** — this is the most common reason "leads show up in the admin panel but I never get an email."
+
+### Step 7 — Add Notification Recipients
+
+Run `supabase/add_notification_emails.sql` once in the SQL Editor (adds the `notification_emails` column to `site_settings`, seeded with `info@coppolahome.ca`). Then go to **Admin → Settings → Lead Notification Emails** and add/remove whoever should be emailed when a lead comes in — no code change or redeploy needed to update the list later.
+
 ### What the email looks like
 
 When a customer submits a form, you will receive a formatted email showing:
@@ -248,5 +254,6 @@ Every time you push to the main branch, Vercel automatically rebuilds and redepl
 - [ ] Edge Function deployed (`supabase functions deploy notify-lead`)
 - [ ] Resend API key added as secret
 - [ ] Database webhook created pointing to `notify-lead`
+- [ ] Notification emails added in Admin → Settings (`add_notification_emails.sql` run first)
 - [ ] Environment variables added to Vercel
 - [ ] Site deployed on Vercel
