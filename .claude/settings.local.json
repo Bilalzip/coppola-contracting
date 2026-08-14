@@ -10,7 +10,15 @@
       "Bash(git check-ignore *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/)",
       "Bash(rm \"src/components/home/KitchenScrollExplorer.tsx\")",
-      "Bash(rmdir \"src/components/home\")"
+      "Bash(rmdir \"src/components/home\")",
+      "Bash(powershell -Command \"Stop-Process -Id 18244 -Force\")",
+      "Bash(netstat -ano)",
+      "Bash(powershell -Command \"Get-Process -Id 7588 -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime\" 2>&1)",
+      "Bash(powershell -Command \"Stop-Process -Id 11520 -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 15820 -Force\")",
+      "Bash(powershell -Command 'Get-NetTCPConnection -LocalPort 5173,5174 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }')",
+      "Bash(powershell -Command 'Get-NetTCPConnection -LocalPort 5175 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }')",
+      "Bash(powershell -Command 'Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }')"
     ]
   }
 }

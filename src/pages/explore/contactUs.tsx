@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Linkedin } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Facebook, Instagram, Linkedin, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../../components/ui/Button';
 import { supabase } from '../../lib/supabase';
 import { useSiteSettings } from '../../lib/useSiteSettings';
 import { usePageSections } from '../../lib/usePageSections';
+
+const GENERIC_ERROR_MESSAGE =
+  "Something went wrong sending your message. Please try again, or email us directly.";
 
 const labelClass =
   "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-['Poppins',sans-serif]";
@@ -37,29 +40,36 @@ export default function ContactUs() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitStatus('idle');
+    setErrorMessage('');
 
-    const { error } = await supabase.from('leads').insert({
-      type: 'contact',
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone || null,
-      message: formData.message,
-    });
+    try {
+      const { error } = await supabase.from('leads').insert({
+        type: 'contact',
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        message: formData.message,
+      });
 
-    if (error) {
-      setSubmitStatus('error');
-    } else {
-      setSubmitStatus('success');
-      setTimeout(() => {
+      if (error) {
+        setErrorMessage(error.message || GENERIC_ERROR_MESSAGE);
+        setSubmitStatus('error');
+      } else {
+        setSubmitStatus('success');
         setFormData({ name: '', phone: '', email: '', message: '' });
-        setSubmitStatus('idle');
-      }, 3000);
+      }
+    } catch {
+      setErrorMessage('Network error — please check your connection and try again.');
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -181,89 +191,112 @@ export default function ContactUs() {
 
             {/* Right: form card */}
             <div className="rounded-3xl bg-white dark:bg-[#0F0F0F] border border-oxford-blue/5 dark:border-white/10 p-5 sm:p-8">
-              {submitStatus === 'success' && (
-                <motion.div
-                  className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                >
-                  <p className="text-sm text-green-800 dark:text-green-200 font-['Poppins',sans-serif]">
-                    ✓ Thank you for your message! We'll get back to you soon.
-                  </p>
-                </motion.div>
-              )}
+              <AnimatePresence mode="wait">
+                {submitStatus === 'success' && (
+                  <motion.div
+                    key="success"
+                    className="mb-6 flex items-start gap-2.5 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-green-800 dark:text-green-200 font-['Poppins',sans-serif]">
+                      Thank you for your message! We'll get back to you soon.
+                    </p>
+                  </motion.div>
+                )}
+
+                {submitStatus === 'error' && (
+                  <motion.div
+                    key="error"
+                    className="mb-6 flex items-start gap-2.5 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-800 dark:text-red-200 font-['Poppins',sans-serif]">
+                      {errorMessage || GENERIC_ERROR_MESSAGE}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label htmlFor="name" className={labelClass}>
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="John Doe"
-                    className={fieldClass}
-                  />
-                </div>
+                <fieldset disabled={isSubmitting} className="space-y-5 disabled:opacity-60">
+                  <div>
+                    <label htmlFor="name" className={labelClass}>
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      required
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="John Doe"
+                      className={fieldClass}
+                    />
+                  </div>
 
-                <div>
-                  <label htmlFor="email" className={labelClass}>
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="john@example.com"
-                    className={fieldClass}
-                  />
-                </div>
+                  <div>
+                    <label htmlFor="email" className={labelClass}>
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="john@example.com"
+                      className={fieldClass}
+                    />
+                  </div>
 
-                <div>
-                  <label htmlFor="phone" className={labelClass}>
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="(123) 456-7890"
-                    className={fieldClass}
-                  />
-                </div>
+                  <div>
+                    <label htmlFor="phone" className={labelClass}>
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="(123) 456-7890"
+                      className={fieldClass}
+                    />
+                  </div>
 
-                <div>
-                  <label htmlFor="message" className={labelClass}>
-                    Your Message *
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    required
-                    rows={5}
-                    value={formData.message}
-                    onChange={handleChange}
-                    placeholder="Tell us about your project..."
-                    className={`${fieldClass} resize-none`}
-                  />
-                </div>
+                  <div>
+                    <label htmlFor="message" className={labelClass}>
+                      Your Message *
+                    </label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      required
+                      rows={5}
+                      value={formData.message}
+                      onChange={handleChange}
+                      placeholder="Tell us about your project..."
+                      className={`${fieldClass} resize-none`}
+                    />
+                  </div>
+                </fieldset>
 
                 <Button
                   type="submit"
                   variant="primary"
                   size="md"
                   disabled={isSubmitting}
-                  className="w-full"
+                  className="w-full flex items-center justify-center gap-2"
                 >
+                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </Button>
               </form>
