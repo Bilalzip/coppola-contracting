@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, Mail, Image, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, Mail, Image, Quote, LogOut, Menu, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { to: '/admin/products', icon: Package, label: 'Products' },
   { to: '/admin/leads', icon: Mail, label: 'Leads' },
   { to: '/admin/gallery', icon: Image, label: 'Gallery' },
+  { to: '/admin/testimonials', icon: Quote, label: 'Testimonials' },
 ]
 
 export default function AdminLayout() {

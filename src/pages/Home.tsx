@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Testimonials from '../components/layout/Testimonials';
@@ -9,8 +9,64 @@ import Button from '../components/ui/Button';
 import BrandCarousel from '../components/layout/BrandCarousel';
 import FeaturedCollections from '../components/layout/FeaturedCollections';
 import SplitText from '../components/ui/SplitText';
+import { supabase } from '../lib/supabase';
+import type { GalleryItem, Product } from '../types/database';
 
 gsap.registerPlugin(ScrollTrigger);
+
+// Listing route per product category — matches the routes in main.tsx.
+const CATEGORY_ROUTE: Record<Product['category'], string> = {
+  vanity: '/products/vanities',
+  quartz: '/quartz-countertops',
+  faucet: '/products/faucets',
+  mirror: '/products/mirrors',
+  sink: '/products/sinks',
+  toilet: '/products/toilets',
+  flooring: '/products/flooring',
+  lighting: '/products/lighting',
+  hardware: '/hardware',
+};
+
+const CATEGORY_LABEL: Record<Product['category'], string> = {
+  vanity: 'Bathroom Vanities',
+  quartz: 'Quartz Countertops',
+  faucet: 'Faucets',
+  mirror: 'Mirrors',
+  sink: 'Sinks',
+  toilet: 'Toilets',
+  flooring: 'Flooring',
+  lighting: 'Lighting',
+  hardware: 'Hardware',
+};
+
+// Service pages have no catalogue products behind them, so they stay as
+// fixed navigation tiles alongside the DB-driven product categories below.
+const serviceTiles = [
+  {
+    id: 'custom-cabinetry',
+    category: 'Custom Cabinetry',
+    description: 'Precision-engineered cabinetry designed to maximize space and style in every room.',
+    image: '/assets/gallery/Screenshot 2025-12-27 101328.png',
+    link: '/custom-cabinetry',
+  },
+  {
+    id: 'bespoke-millwork',
+    category: 'Custom Millwork',
+    description: 'Precision engineering for every space',
+    image: '/assets/gallery/Screenshot 2025-12-27 101500.png',
+    link: '/commercial-millwork',
+  },
+  {
+    id: 'outdoor-kitchens',
+    category: 'Outdoor Kitchens',
+    description: 'Durable surfaces for modern living',
+    image: '/assets/gallery/landing-header-carousel-image-5.png',
+    // Matches the navbar: outdoor kitchens live on the Q-Boo site. The
+    // internal /outdoor-kitchens route is only a shim that bounces home.
+    link: 'https://q-boo.com/',
+    external: true,
+  },
+];
 
 /** Collection cards point at either an app route or an outside site. */
 const CollectionLink = ({
@@ -46,24 +102,62 @@ const Home = () => {
   const collectionsHeaderRef = useRef<HTMLDivElement>(null);
   const collectionsLargeCardRef = useRef<HTMLDivElement>(null);
   const collectionsSmallCardsRef = useRef<HTMLDivElement>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
   const whyChooseSectionRef = useRef<HTMLElement>(null);
 
   // ============================================
-  // DATA
+  // DATA (loaded from Supabase)
   // ============================================
 
-  const carouselImages = [
-    '/assets/gallery/landing-header-carousel-image-1.webp',
-    '/assets/gallery/landing-header-carousel-image-2.webp',
-    '/assets/gallery/landing-header-carousel-image-3.png',
-    '/assets/gallery/landing-header-carousel-image-4.png',
-    '/assets/gallery/landing-header-carousel-image-5.png',
-    '/assets/gallery/landing-header-carousel-image-6.webp',
-    '/assets/gallery/landing-header-carousel-image-7.webp',
-    '/assets/gallery/landing-header-carousel-image-8.avif',
-    '/assets/gallery/landing-header-carousel-image-9.png',
-    '/assets/gallery/landing-header-carousel-image-10.jpg',
+  const [carouselImages, setCarouselImages] = useState<string[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [whyChooseItems, setWhyChooseItems] = useState<GalleryItem[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from('gallery')
+      .select('*')
+      .eq('featured', true)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        const items = data ?? [];
+        setCarouselImages(items.flatMap((item) => item.images));
+        setWhyChooseItems(items.slice(0, 4));
+      });
+
+    supabase
+      .from('products')
+      .select('*')
+      .eq('featured', true)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setFeaturedProducts(data ?? []));
+  }, []);
+
+  // One representative product per category, for the Signature Collections grid.
+  const collectionsByCategory = Object.values(
+    featuredProducts.reduce<Partial<Record<Product['category'], Product>>>((acc, product) => {
+      if (!acc[product.category]) acc[product.category] = product;
+      return acc;
+    }, {})
+  ) as Product[];
+
+  // Fixed service tiles plus one tile per live product category.
+  const signatureTiles = [
+    ...serviceTiles.map((tile) => ({
+      id: tile.id,
+      category: tile.category,
+      description: tile.description,
+      image: tile.image,
+      link: tile.link,
+      external: tile.external,
+    })),
+    ...collectionsByCategory.map((product) => ({
+      id: product.id,
+      category: CATEGORY_LABEL[product.category],
+      description: product.short_description || product.description || '',
+      image: product.images[0] ?? '',
+      link: CATEGORY_ROUTE[product.category],
+      external: false,
+    })),
   ];
 
   // ============================================
@@ -82,8 +176,8 @@ const Home = () => {
 
     // The two columns travel in opposite directions at different rates, which
     // is what separates them into distinct parallax planes.
-    const leftSpeed = 1.2;
-    const rightSpeed = 0.75;
+    const leftSpeed = 0.75;
+    const rightSpeed = 0.45;
 
     const animateLeftCarousel = () => {
       if (leftCarouselRef.current && !paused) {
@@ -128,7 +222,7 @@ const Home = () => {
       stage?.removeEventListener('mouseenter', handleMouseEnter);
       stage?.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, []);
+  }, [carouselImages.length]);
 
   // ============================================
   // COLLECTIONS SECTION GSAP ANIMATIONS
@@ -202,107 +296,6 @@ const Home = () => {
   }, []);
 
 
-
-  // ============================================
-  // COLLECTIONS DATA
-  // ============================================
-
-  const collections = [
-    {
-      id: 'custom-cabinetry',
-      category: 'Custom Cabinetry',
-      title: 'Custom Cabinetry',
-      description: 'Precision-engineered cabinetry designed to maximize space and style in every room.',
-      image: '/assets/gallery/Screenshot 2025-12-27 101328.png',
-      size: 'large',
-      buttons: ['View', 'Learn'],
-      link: '/custom-cabinetry',
-    },
-    {
-      id: 'quartz-countertops',
-      category: 'Quartz Countertops',
-      description: 'Functional design meets sophistication',
-      image: '/Images/products/quartz-countertops/RW_Calacatta-Supreme_MARS_RED_MOCKUP.webp',
-      loading: 'eager',
-      size: 'small',
-      link: '/quartz-countertops',
-    },
-    {
-      id: 'bespoke-millwork',
-      category: 'Custom Millwork',
-      description: 'Precision engineering for every space',
-      image: '/assets/gallery/Screenshot 2025-12-27 101500.png',
-      loading: 'eager',
-      size: 'small',
-      link: '/commercial-millwork',
-    },
-    {
-      id: 'outdoor-kitchens',
-      category: 'Outdoor Kitchens',
-      description: 'Durable surfaces for modern living',
-      image: '/assets/gallery/landing-header-carousel-image-5.png',
-      loading: 'eager',
-      size: 'small',
-      // Matches the navbar: outdoor kitchens live on the Q-Boo site. The
-      // internal /outdoor-kitchens route is only a shim that bounces home.
-      link: 'https://q-boo.com/',
-      external: true,
-    },
-    {
-      id: 'vanities',
-      category: 'Bathroom Vanities',
-      description: 'Bespoke craftsmanship for discerning homes',
-      image: '/Images/products/vanities-images/james-martin-vanity/brittany-30-single-vanity-in-victory-blue-single-bathroom-vanity-james-martin-vanities-select-your-top-959063.webp',
-      loading: 'eager',
-      size: 'small',
-      link: '/products/vanities',
-    },
-  ];
-
-
-  // ============================================
-  // WHY CHOOSE SERVICES DATA
-  // ============================================
-
-  // Fan geometry, outermost cards tilted and dropped furthest so the pair in
-  // the middle reads as the front of the stack. Flat below the sm breakpoint.
-  const whyChooseFan = [
-    { tilt: 'sm:-rotate-[9deg] sm:translate-y-8 sm:scale-[0.9]', z: 'z-10' },
-    { tilt: 'sm:-rotate-[3deg] sm:translate-y-1 sm:scale-[0.97]', z: 'z-20' },
-    { tilt: 'sm:rotate-[3deg] sm:translate-y-1 sm:scale-[0.97]', z: 'z-20' },
-    { tilt: 'sm:rotate-[9deg] sm:translate-y-8 sm:scale-[0.9]', z: 'z-10' },
-  ];
-
-  const whyChooseFeatures = [
-    {
-      category: 'Luxury',
-      title: 'Unparalleled design sophistication',
-      description: 'Elevating spaces with meticulous attention to detail.',
-      image: 'https://images.pexels.com/photos/6585757/pexels-photo-6585757.jpeg?auto=compress&cs=tinysrgb&w=800',
-      link: '/our-expertise'
-    },
-    {
-      category: 'Bespoke',
-      title: 'Custom solutions for unique spaces',
-      description: 'Tailored designs that reflect your individual style.',
-      image: 'https://images.pexels.com/photos/6585755/pexels-photo-6585755.jpeg?auto=compress&cs=tinysrgb&w=800',
-      link: '/custom-cabinetry'
-    },
-    {
-      category: 'Expertise',
-      title: 'Decades of craftsmanship',
-      description: 'Proven techniques and innovative approaches.',
-      image: 'https://images.pexels.com/photos/5691608/pexels-photo-5691608.jpeg?auto=compress&cs=tinysrgb&w=800',
-      link: '/our-expertise'
-    },
-    {
-      category: 'Showroom',
-      title: 'Immersive design experience',
-      description: 'Visualize your dream space with our expert consultations.',
-      image: 'https://images.pexels.com/photos/6585761/pexels-photo-6585761.jpeg?auto=compress&cs=tinysrgb&w=800',
-      link: '/contact'
-    }
-  ];
 
   return (
     <>
@@ -387,50 +380,52 @@ const Home = () => {
               {/* Spotlight behind the stage, lifting it off the ambient background */}
               <div className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-gradient-to-tr from-true-blue/[0.08] via-transparent to-sapphire/[0.06] blur-2xl" />
 
-              <div className="relative grid grid-cols-2 gap-4 h-full [mask-image:linear-gradient(to_bottom,transparent,black_9%,black_91%,transparent)]">
-                <div
-                  ref={leftCarouselRef}
-                  className="overflow-hidden h-full rounded-2xl"
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                >
-                  <div className="space-y-4">
-                    {[...carouselImages, ...carouselImages].map((image, index) => (
-                      <div
-                        key={`left-${index}`}
-                        className="relative overflow-hidden rounded-xl h-56 sm:h-64 md:h-72 lg:h-80 ring-1 ring-oxford-blue/10 dark:ring-white/10 shadow-brand-md"
-                      >
-                        <img
-                          src={image}
-                          alt={`Gallery ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
+              {carouselImages.length > 0 && (
+                <div className="relative grid grid-cols-2 gap-4 h-full [mask-image:linear-gradient(to_bottom,transparent,black_9%,black_91%,transparent)]">
+                  <div
+                    ref={leftCarouselRef}
+                    className="overflow-hidden h-full rounded-2xl"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  >
+                    <div className="space-y-4">
+                      {[...carouselImages, ...carouselImages].map((image, index) => (
+                        <div
+                          key={`left-${index}`}
+                          className="relative overflow-hidden rounded-xl h-56 sm:h-64 md:h-72 lg:h-80 ring-1 ring-oxford-blue/10 dark:ring-white/10 shadow-brand-md"
+                        >
+                          <img
+                            src={image}
+                            alt={`Gallery ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                {/* Offset so the two tracks never line up rung-for-rung */}
-                <div
-                  ref={rightCarouselRef}
-                  className="overflow-hidden h-full rounded-2xl translate-y-8"
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                >
-                  <div className="space-y-4">
-                    {[...carouselImages, ...carouselImages].map((image, index) => (
-                      <div
-                        key={`right-${index}`}
-                        className="relative overflow-hidden rounded-xl h-56 sm:h-64 md:h-72 lg:h-80 ring-1 ring-oxford-blue/10 dark:ring-white/10 shadow-brand-md"
-                      >
-                        <img
-                          src={image}
-                          alt={`Gallery ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
+                  {/* Offset so the two tracks never line up rung-for-rung */}
+                  <div
+                    ref={rightCarouselRef}
+                    className="overflow-hidden h-full rounded-2xl translate-y-8"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  >
+                    <div className="space-y-4">
+                      {[...carouselImages, ...carouselImages].map((image, index) => (
+                        <div
+                          key={`right-${index}`}
+                          className="relative overflow-hidden rounded-xl h-56 sm:h-64 md:h-72 lg:h-80 ring-1 ring-oxford-blue/10 dark:ring-white/10 shadow-brand-md"
+                        >
+                          <img
+                            src={image}
+                            alt={`Gallery ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -446,119 +441,41 @@ const Home = () => {
       {/* ============================================ */}
       <section
         ref={collectionsSectionRef}
-        className="relative py-12 sm:py-16 md:py-20 transition-colors duration-300 bg-gradient-to-br from-[#0a1128] via-[#001f54] to-[#0a1128] dark:from-[#050812] dark:via-[#001435] dark:to-[#050812]"
+        className="relative py-12 sm:py-16 md:py-20 transition-colors duration-300"
         aria-labelledby="collections-heading"
       >
         <div className="px-4 sm:px-6 md:px-8 lg:px-12 max-w-[1600px] mx-auto mb-8 sm:mb-12 md:mb-16">
-          <div ref={collectionsHeaderRef} className="mb-8 sm:mb-12 md:mb-16">
+          <div ref={collectionsHeaderRef} className="text-center">
             {/* SEO Tags */}
-            <div className="flex items-center justify-center gap-2 text-xs tracking-[0.15em] uppercase text-blue-300 font-secondary mb-4 font-semibold">
+            <div className="flex items-center justify-center gap-2 text-xs tracking-[0.15em] uppercase text-gray-500 dark:text-gray-400 font-secondary mb-4 font-semibold">
               <span>LUXURY</span>
-              <span className="w-1 h-1 rounded-full bg-blue-300"></span>
+              <span className="w-1 h-1 rounded-full bg-gray-400"></span>
               <span>BESPOKE</span>
-              <span className="w-1 h-1 rounded-full bg-blue-300"></span>
+              <span className="w-1 h-1 rounded-full bg-gray-400"></span>
               <span>REFINED</span>
             </div>
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 sm:gap-6 lg:gap-8">
-              <SplitText
-                text="Our signature collections"
-                tag="h2"
-                className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-serif font-normal text-white tracking-tight leading-tight"
-                splitType="chars"
-                delay={25}
-                duration={0.7}
-                from={{ opacity: 0, y: 40 }}
-                to={{ opacity: 1, y: 0 }}
-                threshold={0.1}
-              />
-              <div className="max-w-md lg:max-w-lg lg:text-right">
-                <p
-                  className="text-sm sm:text-base text-gray-200 dark:text-gray-300"
-                  >
-                {!isExpanded ? (
-                  <>
-                    Discover thoughtfully curated collections crafted to elevate every room with timeless style and exceptional craftsmanship.{' '}
-                    <button
-                      onClick={() => setIsExpanded(true)}
-                      className="font-bold text-blue-300 hover:text-blue-200 hover:underline inline-flex items-center gap-1"
-                    >
-                      Learn more
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    Discover thoughtfully curated collections crafted to elevate every room with timeless style and exceptional craftsmanship. Explore handcrafted design selections that blend beauty, functionality, and qualityeach chosen to transform your home effortlessly. From custom vanities to bespoke millwork, our signature offerings showcase the finest materials and finishes for a truly elevated living experience. This refined portfolio of premium home solutions is designed to inspire and help you create spaces that feel personal, functional, and beautifully finishedcrafted with precision, premium materials, and an unwavering commitment to detail.{' '}
-                    <button
-                      onClick={() => setIsExpanded(false)}
-                      className="font-bold text-blue-300 hover:text-blue-200 hover:underline inline-flex items-center gap-1"
-                    >
-                      Show less
-                      <ChevronUp className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-                </p>
-              </div>
-            </div>
+            <h2
+              id="collections-heading"
+              className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-normal text-gray-900 dark:text-white tracking-tight leading-tight mb-4"
+            >
+              Our signature collections
+            </h2>
+            <p className="max-w-2xl mx-auto text-sm sm:text-base text-gray-600 dark:text-gray-400">
+              Thoughtfully curated collections crafted to elevate every room with timeless style and exceptional craftsmanship.
+            </p>
           </div>
         </div>
 
         <div className="px-6 sm:px-6 md:px-8 lg:px-1 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-            {/* Large Custom Cabinetry Card - Full Width on Mobile, 2 cols on Desktop */}
-            <motion.div 
-              ref={collectionsLargeCardRef}
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="md:col-span-2 group bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_8px_20px_rgba(0,0,0,0.3)] border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600"
-            >
-              <Link
-                to={collections[0].link}
-                aria-label={`View all ${collections[0].category}`}
-                className="flex flex-col lg:flex-row h-full"
-              >
-                {/* Large Image Section - Left Half */}
-                <div className="lg:w-1/2 h-52 sm:h-64 lg:h-auto bg-gray-200 dark:bg-gray-800 overflow-hidden">
-                  <img
-                    src={collections[0].image}
-                    alt="Bespoke storage solutions with precision-engineered cabinetry"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="eager"
-                  />
-                </div>
-                {/* Content Section - Right Half */}
-                <div className="lg:w-1/2 p-5 sm:p-8 flex flex-col justify-center bg-white dark:bg-gray-900">
-                  <h3 className="text-xl sm:text-2xl font-normal text-gray-900 dark:text-white mb-2 sm:mb-3 group-hover:text-[#001f54] dark:group-hover:text-[#0466c8] transition-colors font-serif">
-                    {collections[0].title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 font-secondary leading-relaxed">
-                    {collections[0].description}
-                  </p>
-                  <div className="flex items-center text-gray-900 dark:text-white font-medium text-sm group-hover:text-[#001f54] dark:group-hover:text-[#0466c8] transition-colors">
-                    <span className="relative inline-block">
-                      View all
-                      <span className="absolute left-0 bottom-0 w-0 h-[1px] bg-[#001f54] dark:bg-[#0466c8] transition-all duration-300 group-hover:w-full"></span>
-                    </span>
-                    <svg className="w-4 h-4 ml-2 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-
-            {/* Small Cards */}
-            {collections.slice(1).map((collection, index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {signatureTiles.map((tile, index) => (
               <motion.div
-                key={collection.id}
-                ref={index === 0 ? collectionsSmallCardsRef : undefined}
+                key={tile.id}
+                ref={index === 0 ? collectionsLargeCardRef : index === 1 ? collectionsSmallCardsRef : undefined}
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true, margin: "-100px" }}
-                transition={{ 
+                transition={{
                   duration: 0.6,
                   delay: index * 0.1,
                   ease: "easeOut"
@@ -566,26 +483,28 @@ const Home = () => {
                 className="collection-small-card group bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_8px_20px_rgba(0,0,0,0.3)] border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600"
               >
                 <CollectionLink
-                  to={collection.link}
-                  external={collection.external}
-                  label={`Explore ${collection.category}`}
+                  to={tile.link}
+                  external={tile.external}
+                  label={`Explore ${tile.category}`}
                 >
                 {/* Image Section */}
-                <div className="aspect-[4/3] sm:aspect-[4/3] bg-gray-200 dark:bg-gray-800 overflow-hidden">
-                  <img
-                    src={collection.image}
-                    alt={`${collection.category} - ${collection.description}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="eager"
-                  />
+                <div className="aspect-[4/3] bg-gray-200 dark:bg-gray-800 overflow-hidden">
+                  {tile.image && (
+                    <img
+                      src={tile.image}
+                      alt={`${tile.category} - ${tile.description}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="eager"
+                    />
+                  )}
                 </div>
                 {/* Content Section */}
                 <div className="p-4 sm:p-5">
                   <h3 className="text-base sm:text-lg font-normal text-gray-900 dark:text-white mb-1.5 sm:mb-2 group-hover:text-[#001f54] dark:group-hover:text-[#0466c8] transition-colors font-serif">
-                    {collection.category}
+                    {tile.category}
                   </h3>
                   <p className="text-caption text-gray-600 dark:text-gray-400 mb-2.5 sm:mb-3 font-secondary leading-relaxed">
-                    {collection.description}
+                    {tile.description}
                   </p>
                   <div className="flex items-center text-gray-900 dark:text-white font-medium text-xs group-hover:text-[#001f54] dark:group-hover:text-[#0466c8] transition-colors">
                     <span className="relative inline-block">
@@ -613,69 +532,73 @@ const Home = () => {
       {/* ============================================ */}
       {/* WHY CHOOSE SECTION */}
       {/* ============================================ */}
-      <section ref={whyChooseSectionRef} className="relative py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 transition-colors duration-300 bg-gray-50/50 dark:bg-gray-900/20">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-10 sm:mb-12">
-            <p className="text-xs sm:text-sm tracking-[0.2em] uppercase text-gray-900 dark:text-white mb-3 font-['Poppins',sans-serif] font-semibold">
-              Excellence
-            </p>
-            <SplitText
-              text="Why choose Coppola"
-              tag="h2"
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal text-gray-900 dark:text-white mb-4 font-serif"
-              splitType="chars"
-              delay={30}
-              duration={0.7}
-              from={{ opacity: 0, y: 40 }}
-              to={{ opacity: 1, y: 0 }}
-              threshold={0.1}
-              textAlign="center"
-            />
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-['Poppins',sans-serif]">
-              Uncompromising quality meets innovative design.
-            </p>
-          </div>
+      {whyChooseItems.length > 0 && (
+        <section ref={whyChooseSectionRef} className="relative py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 transition-colors duration-300 bg-gray-50/50 dark:bg-gray-900/20">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-10 sm:mb-12">
+              <p className="text-xs sm:text-sm tracking-[0.2em] uppercase text-gray-900 dark:text-white mb-3 font-['Poppins',sans-serif] font-semibold">
+                Excellence
+              </p>
+              <SplitText
+                text="Why choose Coppola"
+                tag="h2"
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal text-gray-900 dark:text-white mb-4 font-serif"
+                splitType="chars"
+                delay={30}
+                duration={0.7}
+                from={{ opacity: 0, y: 40 }}
+                to={{ opacity: 1, y: 0 }}
+                threshold={0.1}
+                textAlign="center"
+              />
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-['Poppins',sans-serif]">
+                Uncompromising quality meets innovative design.
+              </p>
+            </div>
 
-          {/* Fanned Cards */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-center gap-6 sm:gap-0 sm:-space-x-2 lg:-space-x-4 sm:pt-6">
-            {whyChooseFeatures.map((feature, index) => {
-              const fan = whyChooseFan[index] ?? whyChooseFan[whyChooseFan.length - 1];
-
-              return (
+            {/* Feature Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {whyChooseItems.map((item, index) => (
                 <motion.div
-                  key={index}
-                  className={`relative w-full sm:w-[clamp(190px,23vw,310px)] sm:shrink-0 hover:z-40 ${fan.z}`}
+                  key={item.id}
+                  className="relative w-full"
                   initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.8, delay: index * 0.1, ease: 'easeOut' }}
                 >
                   <div
-                    className={`group relative aspect-[4/3] sm:aspect-[3/4] overflow-hidden rounded-3xl cursor-pointer border border-white/50 dark:border-white/10 shadow-brand-lg transition-transform duration-500 ease-out sm:hover:rotate-0 sm:hover:-translate-y-4 sm:hover:scale-[1.04] ${fan.tilt}`}
-                    onClick={() => navigate(feature.link)}
+                    className="group relative aspect-[3/4] overflow-hidden rounded-3xl cursor-pointer border border-white/50 dark:border-white/10 shadow-brand-lg transition-transform duration-500 ease-out hover:-translate-y-2 hover:scale-[1.02]"
+                    onClick={() => navigate('/our-works')}
                   >
-                    <img
-                      src={feature.image}
-                      alt={feature.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
+                    {item.images[0] && (
+                      <img
+                        src={item.images[0]}
+                        alt={item.title}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    )}
 
                     {/* Scrim keeps the overlaid copy legible against any photo */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-                    <span className="absolute top-4 left-4 rounded-full bg-white/85 dark:bg-black/55 backdrop-blur px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-oxford-blue dark:text-white font-['Poppins',sans-serif]">
-                      {feature.category}
-                    </span>
+                    {item.category && (
+                      <span className="absolute top-4 left-4 rounded-full bg-white/85 dark:bg-black/55 backdrop-blur px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-oxford-blue dark:text-white font-['Poppins',sans-serif]">
+                        {item.category}
+                      </span>
+                    )}
 
                     <div className="absolute inset-x-0 bottom-0 p-5">
                       <h3 className="text-lg sm:text-xl font-normal text-white mb-2 font-serif leading-tight">
-                        {feature.title}
+                        {item.title}
                       </h3>
-                      <p className="text-sm text-white/75 mb-4 font-['Poppins',sans-serif] leading-relaxed">
-                        {feature.description}
-                      </p>
+                      {item.description && (
+                        <p className="text-sm text-white/75 mb-4 font-['Poppins',sans-serif] leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
 
                       {/* Explore Button */}
                       <div className="text-sm font-medium text-white inline-flex items-center gap-2 font-['Poppins',sans-serif]">
@@ -688,11 +611,11 @@ const Home = () => {
                     </div>
                   </div>
                 </motion.div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ============================================ */}
       {/* TESTIMONIALS SECTION */}

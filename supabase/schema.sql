@@ -49,6 +49,17 @@ create table public.gallery (
   updated_at timestamptz default now()
 );
 
+-- Testimonials table
+create table public.testimonials (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  quote text not null,
+  rating integer default 5 check (rating between 1 and 5),
+  featured boolean default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 -- Auto-update updated_at
 create or replace function update_updated_at()
 returns trigger as $$
@@ -64,14 +75,19 @@ create trigger products_updated_at before update on public.products
 create trigger gallery_updated_at before update on public.gallery
   for each row execute function update_updated_at();
 
+create trigger testimonials_updated_at before update on public.testimonials
+  for each row execute function update_updated_at();
+
 -- Enable RLS
 alter table public.products enable row level security;
 alter table public.leads enable row level security;
 alter table public.gallery enable row level security;
+alter table public.testimonials enable row level security;
 
--- Public read for products and gallery (the main site needs to read these)
+-- Public read for products, gallery, and testimonials (the main site needs to read these)
 create policy "Public read products" on public.products for select using (true);
 create policy "Public read gallery" on public.gallery for select using (true);
+create policy "Public read testimonials" on public.testimonials for select using (true);
 
 -- Public insert for leads (contact/quote forms)
 create policy "Public insert leads" on public.leads for insert with check (true);
@@ -80,3 +96,4 @@ create policy "Public insert leads" on public.leads for insert with check (true)
 create policy "Admin all products" on public.products for all using (auth.role() = 'authenticated');
 create policy "Admin all leads" on public.leads for all using (auth.role() = 'authenticated');
 create policy "Admin all gallery" on public.gallery for all using (auth.role() = 'authenticated');
+create policy "Admin all testimonials" on public.testimonials for all using (auth.role() = 'authenticated');

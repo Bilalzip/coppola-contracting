@@ -9,6 +9,7 @@ import ProductsList from './pages/admin/products/ProductsList';
 import ProductForm from './pages/admin/products/ProductForm';
 import LeadsPage from './pages/admin/LeadsPage';
 import GalleryPage from './pages/admin/GalleryPage';
+import TestimonialsPage from './pages/admin/TestimonialsPage';
 import { AuthProvider } from './contexts/AuthContext';
 import App from './App.tsx';
 import Home from './pages/Home';
@@ -268,6 +269,7 @@ const router = createBrowserRouter([
       { path: "products/:id", element: <ProductForm /> },
       { path: "leads", element: <LeadsPage /> },
       { path: "gallery", element: <GalleryPage /> },
+      { path: "testimonials", element: <TestimonialsPage /> },
     ]
   }
 ]);
