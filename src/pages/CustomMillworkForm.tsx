@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Send, Ruler, Palette, Calendar } from 'lucide-react';
+import { useSiteSettings } from '../lib/useSiteSettings';
 
 // Icon paths (moved to public folder)
 const phoneCallIcon = '/icons/phone-call.svg';
@@ -80,6 +81,7 @@ const CustomMillworkForm: React.FC = () => {
     additionalNotes: ''
   });
 
+  const settings = useSiteSettings();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -139,7 +141,7 @@ This request was submitted through the Coppola Contracting website.
       `.trim();
 
       // Create mailto link
-      const mailtoLink = `mailto:admin@coppolahome.ca?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+      const mailtoLink = `mailto:${settings.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
       
       // Open default email client
       window.location.href = mailtoLink;
@@ -735,15 +737,15 @@ This request was submitted through the Coppola Contracting website.
                   <img src={phoneCallIcon} alt="Phone" className="h-8 w-8 text-gray-700" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Call Us</h3>
-               <p className="text-gray-600">+1 (807) 345-9989</p>
-               <p className="text-sm text-gray-500">Mon-Fri 9AM-5PM</p>
+               <p className="text-gray-600">{settings.phone}</p>
+               <p className="text-sm text-gray-500">{settings.hours[0] ? `${settings.hours[0].days} ${settings.hours[0].time}` : ''}</p>
              </div>
                          <div className="text-center">
               <div className="flex items-center justify-center mx-auto mb-4">
                 <img src={emailIcon} alt="Email" className="h-8 w-8 text-gray-700" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Us</h3>
-               <p className="text-gray-600">admin@coppolahome.ca</p>
+               <p className="text-gray-600">{settings.email}</p>
                <p className="text-sm text-gray-500">24/7 Response</p>
              </div>
                          <div className="text-center">
@@ -751,9 +753,8 @@ This request was submitted through the Coppola Contracting website.
                 <img src={gpsIcon} alt="Location" className="h-8 w-8 text-gray-700" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Visit Us</h3>
-               <p className="text-gray-600">269 RED RIVER RD</p>
-               <p className="text-sm text-gray-500">THUNDER BAY ON, P7B 1A9</p>
-               <p className="text-sm text-gray-500">By appointment</p>
+               <p className="text-gray-600">{settings.address_line1}</p>
+               <p className="text-sm text-gray-500">{settings.address_line2}</p>
              </div>
            </div>
                  </div>

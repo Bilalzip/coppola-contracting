@@ -1,14 +1,29 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, Mail, Image, Quote, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, Mail, Image, Quote, Building2, BadgeCheck, ListOrdered, Settings, Paintbrush, LogOut, Menu, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
-const navItems = [
+const contentNavItems = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/products', icon: Package, label: 'Products' },
   { to: '/admin/leads', icon: Mail, label: 'Leads' },
   { to: '/admin/gallery', icon: Image, label: 'Gallery' },
   { to: '/admin/testimonials', icon: Quote, label: 'Testimonials' },
+  { to: '/admin/brands', icon: Building2, label: 'Partnered Brands' },
+  { to: '/admin/trust-bar', icon: BadgeCheck, label: 'Trust Bar' },
+  { to: '/admin/how-it-works', icon: ListOrdered, label: 'How It Works' },
+  { to: '/admin/settings', icon: Settings, label: 'Settings' },
+]
+
+const appearanceNavItems = [
+  { to: '/admin/appearance/home', label: 'Home' },
+  { to: '/admin/appearance/about', label: 'About Us' },
+  { to: '/admin/appearance/custom-cabinetry', label: 'Custom Cabinetry' },
+  { to: '/admin/appearance/our-expertise', label: 'Our Expertise' },
+  { to: '/admin/appearance/our-works', label: 'Our Works' },
+  { to: '/admin/appearance/contact', label: 'Contact' },
+  { to: '/admin/appearance/get-quote', label: 'Get a Quote' },
+  { to: '/admin/appearance/products', label: 'Products' },
 ]
 
 export default function AdminLayout() {
@@ -33,8 +48,8 @@ export default function AdminLayout() {
         </button>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
-        {navItems.map(({ to, icon: Icon, label }) => (
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        {contentNavItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
@@ -49,6 +64,27 @@ export default function AdminLayout() {
             {label}
           </NavLink>
         ))}
+
+        <div className="pt-5 mt-4 border-t border-gray-700">
+          <p className="px-4 pb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <Paintbrush className="w-3.5 h-3.5" />
+            Appearance
+          </p>
+          {appearanceNavItems.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => setSidebarOpen(false)}
+              className={({ isActive }) =>
+                `block pl-11 pr-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                }`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+        </div>
       </nav>
 
       <div className="p-4 border-t border-gray-700">

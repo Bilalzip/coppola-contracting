@@ -1,27 +1,34 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import type { Brand } from '../../types/database';
+
 interface BrandCarouselProps {
   /** Compact strip for the hero, without the full section chrome. */
   inline?: boolean;
 }
 
-const brands = [
-  { id: 1, name: 'Brand 1', logo: '/assets/brands/brand1.png' },
-  { id: 2, name: 'Brand 2', logo: '/assets/brands/brand2.png' },
-  { id: 3, name: 'Brand 3', logo: '/assets/brands/brand3.png' },
-  { id: 4, name: 'Brand 4', logo: '/assets/brands/brand4.png' },
-  { id: 5, name: 'Brand 5', logo: '/assets/brands/brand5.png' },
-  { id: 6, name: 'Brand 6', logo: '/assets/brands/brand6.png' },
-  { id: 7, name: 'Brand 7', logo: '/assets/brands/brand7.png' },
-  { id: 8, name: 'Brand 8', logo: '/assets/brands/brand8.png' },
-  { id: 9, name: 'Brand 9', logo: '/assets/brands/brand9.png' },
-  { id: 10, name: 'Brand 10', logo: '/assets/brands/brand10.png' },
-  { id: 11, name: 'Brand 11', logo: '/assets/brands/brand11.png' },
-  { id: 12, name: 'Brand 12', logo: '/assets/brands/brand12.png' },
-  { id: 13, name: 'Brand 13', logo: '/assets/brands/brand13.png' },
-  { id: 14, name: 'Brand 14', logo: '/assets/brands/brand14.png' },
-  { id: 15, name: 'Brand 15', logo: '/assets/brands/brand15.png' },
-];
+const FALLBACK_BRANDS = Array.from({ length: 15 }, (_, i) => ({
+  id: `fallback-${i + 1}`,
+  name: `Brand ${i + 1}`,
+  logo_url: `/assets/brands/brand${i + 1}.png`,
+}));
 
 const BrandCarousel = ({ inline = false }: BrandCarouselProps) => {
+  const [brands, setBrands] = useState<Pick<Brand, 'id' | 'name' | 'logo_url'>[]>(FALLBACK_BRANDS);
+
+  useEffect(() => {
+    supabase
+      .from('brands')
+      .select('id, name, logo_url')
+      .eq('active', true)
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => {
+        if (data && data.length > 0) setBrands(data);
+      });
+  }, []);
+
+  if (brands.length === 0) return null;
+
   const track = (
     <div className="group relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)]">
       <div
@@ -39,7 +46,7 @@ const BrandCarousel = ({ inline = false }: BrandCarouselProps) => {
             }`}
           >
             <img
-              src={brand.logo}
+              src={brand.logo_url}
               alt={brand.name}
               className="max-w-full max-h-full object-contain transition-all duration-300"
               loading="lazy"

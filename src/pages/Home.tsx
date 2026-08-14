@@ -7,10 +7,13 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Testimonials from '../components/layout/Testimonials';
 import Button from '../components/ui/Button';
 import BrandCarousel from '../components/layout/BrandCarousel';
+import TrustBar from '../components/layout/TrustBar';
+import HowItWorks from '../components/layout/HowItWorks';
 import FeaturedCollections from '../components/layout/FeaturedCollections';
 import SplitText from '../components/ui/SplitText';
 import { supabase } from '../lib/supabase';
 import type { GalleryItem, Product } from '../types/database';
+import { usePageSections } from '../lib/usePageSections';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -92,23 +95,28 @@ const CollectionLink = ({
 
 const Home = () => {
   const navigate = useNavigate();
+  const { section } = usePageSections('home');
   // ============================================
   // STATE AND REFS
   // ============================================
-  const leftCarouselRef = useRef<HTMLDivElement>(null);
-  const rightCarouselRef = useRef<HTMLDivElement>(null);
-  const carouselStageRef = useRef<HTMLDivElement>(null);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
   const collectionsSectionRef = useRef<HTMLElement>(null);
   const collectionsHeaderRef = useRef<HTMLDivElement>(null);
   const collectionsLargeCardRef = useRef<HTMLDivElement>(null);
   const collectionsSmallCardsRef = useRef<HTMLDivElement>(null);
   const whyChooseSectionRef = useRef<HTMLElement>(null);
 
+  // Respect prefers-reduced-motion: pause on the poster frame instead of autoplaying.
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      heroVideoRef.current?.pause();
+    }
+  }, []);
+
   // ============================================
   // DATA (loaded from Supabase)
   // ============================================
 
-  const [carouselImages, setCarouselImages] = useState<string[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [whyChooseItems, setWhyChooseItems] = useState<GalleryItem[]>([]);
 
@@ -119,9 +127,7 @@ const Home = () => {
       .eq('featured', true)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
-        const items = data ?? [];
-        setCarouselImages(items.flatMap((item) => item.images));
-        setWhyChooseItems(items.slice(0, 4));
+        setWhyChooseItems((data ?? []).slice(0, 4));
       });
 
     supabase
@@ -160,69 +166,32 @@ const Home = () => {
     })),
   ];
 
-  // ============================================
-  // HERO CAROUSEL ANIMATION EFFECT
-  // ============================================
-
-  useEffect(() => {
-    const stage = carouselStageRef.current;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    let leftAnimationId: number;
-    let rightAnimationId: number;
-    let leftScrollPos = 0;
-    let rightScrollPos = 0;
-    let paused = prefersReducedMotion;
-
-    // The two columns travel in opposite directions at different rates, which
-    // is what separates them into distinct parallax planes.
-    const leftSpeed = 0.75;
-    const rightSpeed = 0.45;
-
-    const animateLeftCarousel = () => {
-      if (leftCarouselRef.current && !paused) {
-        leftScrollPos += leftSpeed;
-        const maxScroll = leftCarouselRef.current.scrollHeight / 2;
-
-        if (leftScrollPos >= maxScroll) {
-          leftScrollPos = 0;
-        }
-
-        leftCarouselRef.current.scrollTop = leftScrollPos;
-      }
-      leftAnimationId = requestAnimationFrame(animateLeftCarousel);
-    };
-
-    const animateRightCarousel = () => {
-      if (rightCarouselRef.current && !paused) {
-        rightScrollPos += rightSpeed;
-        const maxScroll = rightCarouselRef.current.scrollHeight / 2;
-
-        if (rightScrollPos >= maxScroll) {
-          rightScrollPos = 0;
-        }
-
-        rightCarouselRef.current.scrollTop = maxScroll - rightScrollPos;
-      }
-      rightAnimationId = requestAnimationFrame(animateRightCarousel);
-    };
-
-    leftAnimationId = requestAnimationFrame(animateLeftCarousel);
-    rightAnimationId = requestAnimationFrame(animateRightCarousel);
-
-    const handleMouseEnter = () => { paused = true; };
-    const handleMouseLeave = () => { paused = prefersReducedMotion; };
-
-    stage?.addEventListener('mouseenter', handleMouseEnter);
-    stage?.addEventListener('mouseleave', handleMouseLeave);
-
-    return () => {
-      cancelAnimationFrame(leftAnimationId);
-      cancelAnimationFrame(rightAnimationId);
-      stage?.removeEventListener('mouseenter', handleMouseEnter);
-      stage?.removeEventListener('mouseleave', handleMouseLeave);
-    };
-  }, [carouselImages.length]);
+  const hero = section('hero', {
+    heading: 'Custom Kitchens & Bathrooms',
+    subheading: 'Crafted with precision',
+    body: 'Transform your living spaces with elegant millwork and bespoke design solutions. Premium materials, refined finishes, and a timeless sense of style that reflects who you are.',
+    video_url: '/videos/coppola-contracting.mp4',
+    heading_color: '#FFFFFF',
+    subheading_color: 'rgba(255,255,255,0.8)',
+    body_color: 'rgba(255,255,255,0.7)',
+  });
+  const collectionsIntro = section('collections_intro', {
+    heading: 'Our signature collections',
+    body: 'Thoughtfully curated collections crafted to elevate every room with timeless style and exceptional craftsmanship.',
+    heading_color: '#111827',
+    body_color: '#4B5563',
+  });
+  const whyChooseIntro = section('why_choose_intro', {
+    heading: 'Why choose Coppola',
+    subheading: 'Excellence',
+    body: 'Uncompromising quality meets innovative design.',
+    heading_color: '#111827',
+    subheading_color: '#111827',
+    body_color: '#4B5563',
+  });
+  // Hero heading splits on the first space so "Custom" stays plain and the
+  // rest gets the gradient treatment, matching the original design.
+  const [heroHeadingFirst, ...heroHeadingRest] = hero.heading.split(' ');
 
   // ============================================
   // COLLECTIONS SECTION GSAP ANIMATIONS
@@ -302,139 +271,105 @@ const Home = () => {
       {/* ============================================ */}
       {/* HERO SECTION */}
       {/* ============================================ */}
-      <section className="relative pt-28 pb-16 lg:pt-36 lg:pb-24 transition-colors duration-300">
+      <section className="relative min-h-[560px] sm:min-h-[620px] lg:min-h-[680px] flex items-center pt-28 pb-16 lg:pt-36 lg:pb-24 overflow-hidden">
+        {/* Background video of cabinet-making craftsmanship */}
+        <video
+          ref={heroVideoRef}
+          key={hero.video_url}
+          className="absolute inset-0 w-full h-full object-cover"
+          src={hero.video_url}
+          poster="/assets/gallery/landing-header-carousel-image-1.webp"
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+        {/* Dark scrim so the white text stays legible over any frame */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/30" />
 
         <div className="relative w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 xl:gap-20 items-center">
-            {/* Left Content - Text aligned left */}
-            <div className="lg:order-1 w-full max-w-2xl">
-              {/* Tag Row - Small label */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-oxford-blue/15 dark:border-white/15 bg-white/60 dark:bg-white/5 backdrop-blur px-4 py-1.5 text-xs tracking-[0.15em] uppercase text-gray-900 dark:text-white font-secondary mb-6 font-semibold">
-                <span>KITCHEN</span>
-                <span className="w-1 h-1 rounded-full bg-gray-900 dark:bg-white"></span>
-                <span>BATH</span>
-                <span className="w-1 h-1 rounded-full bg-gray-900 dark:bg-white"></span>
-                <span>MILLWORK</span>
-              </div>
+          <div className="w-full max-w-2xl">
+            {/* Tag Row - Small label */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 backdrop-blur px-4 py-1.5 text-xs tracking-[0.15em] uppercase text-white font-secondary mb-6 font-semibold">
+              <span>KITCHEN</span>
+              <span className="w-1 h-1 rounded-full bg-white"></span>
+              <span>BATH</span>
+              <span className="w-1 h-1 rounded-full bg-white"></span>
+              <span>MILLWORK</span>
+            </div>
 
-              {/* Main Heading - Custom styled */}
-              <div className="overflow-visible mb-6">
-                <h1
-                  className="text-page-title text-[#1A1A1A] dark:text-[#F9FAFB] !leading-[1.08] -tracking-[0.015em] text-left italic"
-                  style={{ fontFamily: "'EB Garamond', 'Times New Roman', 'Georgia', serif", fontWeight: 600 }}
-                >
-                  Custom
-                  <span
-                    className="font-serif block"
-                    style={{
-                      background: 'linear-gradient(120deg, var(--heading-accent-from) 0%, var(--heading-accent-to) 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}
-                  >
-                    Kitchens &amp; Bathrooms
-                  </span>
-                </h1>
-              </div>
-
-              {/* Subtitle */}
-              <h2
-                className="text-xl sm:text-2xl md:text-3xl text-[#4a5568] dark:text-[#9ca3af] leading-snug font-serif text-left mb-2"
-                style={{ fontFamily: "'EB Garamond', 'Times New Roman', 'Georgia', serif", fontWeight: 400 }}
+            {/* Main Heading - Custom styled */}
+            <div className="overflow-visible mb-6">
+              <h1
+                className="text-page-title !leading-[1.08] -tracking-[0.015em] text-left italic"
+                style={{ fontFamily: "'EB Garamond', 'Times New Roman', 'Georgia', serif", fontWeight: 600, color: hero.heading_color }}
               >
-                Crafted with precision
-              </h2>
-
-              {/* Description */}
-              <p className="text-sm sm:text-base text-[#666] dark:text-[#a1a1a1] leading-[1.75] text-left font-['Poppins',sans-serif] mb-10 max-w-xl">
-                Transform your living spaces with elegant millwork and bespoke design solutions. Premium materials, refined finishes, and a timeless sense of style that reflects who you are.
-              </p>
-
-              {/* Buttons */}
-              <div className="flex flex-wrap gap-3 sm:gap-4">
-                <Button
-                  variant="primary"
-                  size="md"
-                  className="flex items-center gap-2 group"
-                      onClick={() => navigate('/products')}
+                {heroHeadingFirst}
+                <span
+                  className="font-serif block"
+                  style={{
+                    background: 'linear-gradient(120deg, var(--heading-accent-from) 0%, var(--heading-accent-to) 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
                 >
-                  Explore
-                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="md"
-                  onClick={() => navigate('/contact')}
-                >
-                  Contact Us
-                </Button>
-              </div>
+                  {heroHeadingRest.join(' ')}
+                </span>
+              </h1>
             </div>
 
-            {/* Right Carousel - Rounded corners */}
-            <div
-              ref={carouselStageRef}
-              className="relative h-[440px] sm:h-[500px] lg:h-[540px] xl:h-[580px] lg:order-2 w-full"
+            {/* Subtitle */}
+            <h2
+              className="text-xl sm:text-2xl md:text-3xl leading-snug font-serif text-left mb-2"
+              style={{ fontFamily: "'EB Garamond', 'Times New Roman', 'Georgia', serif", fontWeight: 400, color: hero.subheading_color }}
             >
-              {/* Spotlight behind the stage, lifting it off the ambient background */}
-              <div className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-gradient-to-tr from-true-blue/[0.08] via-transparent to-sapphire/[0.06] blur-2xl" />
+              {hero.subheading}
+            </h2>
 
-              {carouselImages.length > 0 && (
-                <div className="relative grid grid-cols-2 gap-4 h-full [mask-image:linear-gradient(to_bottom,transparent,black_9%,black_91%,transparent)]">
-                  <div
-                    ref={leftCarouselRef}
-                    className="overflow-hidden h-full rounded-2xl"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                  >
-                    <div className="space-y-4">
-                      {[...carouselImages, ...carouselImages].map((image, index) => (
-                        <div
-                          key={`left-${index}`}
-                          className="relative overflow-hidden rounded-xl h-56 sm:h-64 md:h-72 lg:h-80 ring-1 ring-oxford-blue/10 dark:ring-white/10 shadow-brand-md"
-                        >
-                          <img
-                            src={image}
-                            alt={`Gallery ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+            {/* Description */}
+            <p
+              className="text-sm sm:text-base leading-[1.75] text-left font-['Poppins',sans-serif] mb-10 max-w-xl"
+              style={{ color: hero.body_color }}
+            >
+              {hero.body}
+            </p>
 
-                  {/* Offset so the two tracks never line up rung-for-rung */}
-                  <div
-                    ref={rightCarouselRef}
-                    className="overflow-hidden h-full rounded-2xl translate-y-8"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                  >
-                    <div className="space-y-4">
-                      {[...carouselImages, ...carouselImages].map((image, index) => (
-                        <div
-                          key={`right-${index}`}
-                          className="relative overflow-hidden rounded-xl h-56 sm:h-64 md:h-72 lg:h-80 ring-1 ring-oxford-blue/10 dark:ring-white/10 shadow-brand-md"
-                        >
-                          <img
-                            src={image}
-                            alt={`Gallery ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+            {/* Buttons */}
+            <div className="flex flex-wrap gap-3 sm:gap-4">
+              <Button
+                variant="primary"
+                size="md"
+                className="flex items-center gap-2 group"
+                    onClick={() => navigate('/products')}
+              >
+                Explore
+                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => navigate('/contact')}
+              >
+                Get Your Estimate
+              </Button>
             </div>
-          </div>
-
-          {/* Partnered brands marquee */}
-          <div className="mt-20 lg:mt-24">
-            <BrandCarousel inline />
           </div>
         </div>
       </section>
+
+      {/* Trust Bar - credential badges + press mentions, right below the hero */}
+      <TrustBar />
+
+      {/* Partnered brands marquee - own band, clear of the hero video */}
+      <div className="py-10 lg:py-12 border-b border-oxford-blue/10 dark:border-white/10 transition-colors duration-300">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+          <BrandCarousel inline />
+        </div>
+      </div>
+
+      {/* How It Works - process timeline */}
+      <HowItWorks />
 
       {/* ============================================ */}
       {/* SIGNATURE COLLECTIONS SECTION */}
@@ -456,12 +391,13 @@ const Home = () => {
             </div>
             <h2
               id="collections-heading"
-              className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-normal text-gray-900 dark:text-white tracking-tight leading-tight mb-4"
+              className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-normal tracking-tight leading-tight mb-4"
+              style={{ color: collectionsIntro.heading_color }}
             >
-              Our signature collections
+              {collectionsIntro.heading}
             </h2>
-            <p className="max-w-2xl mx-auto text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              Thoughtfully curated collections crafted to elevate every room with timeless style and exceptional craftsmanship.
+            <p className="max-w-2xl mx-auto text-sm sm:text-base" style={{ color: collectionsIntro.body_color }}>
+              {collectionsIntro.body}
             </p>
           </div>
         </div>
@@ -537,13 +473,14 @@ const Home = () => {
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="text-center mb-10 sm:mb-12">
-              <p className="text-xs sm:text-sm tracking-[0.2em] uppercase text-gray-900 dark:text-white mb-3 font-['Poppins',sans-serif] font-semibold">
-                Excellence
+              <p className="text-xs sm:text-sm tracking-[0.2em] uppercase mb-3 font-['Poppins',sans-serif] font-semibold" style={{ color: whyChooseIntro.subheading_color }}>
+                {whyChooseIntro.subheading}
               </p>
               <SplitText
-                text="Why choose Coppola"
+                text={whyChooseIntro.heading}
                 tag="h2"
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal text-gray-900 dark:text-white mb-4 font-serif"
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal mb-4 font-serif"
+                style={{ color: whyChooseIntro.heading_color }}
                 splitType="chars"
                 delay={30}
                 duration={0.7}
@@ -552,8 +489,8 @@ const Home = () => {
                 threshold={0.1}
                 textAlign="center"
               />
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-['Poppins',sans-serif]">
-                Uncompromising quality meets innovative design.
+              <p className="text-sm sm:text-base max-w-2xl mx-auto font-['Poppins',sans-serif]" style={{ color: whyChooseIntro.body_color }}>
+                {whyChooseIntro.body}
               </p>
             </div>
 

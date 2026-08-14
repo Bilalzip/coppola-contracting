@@ -10,6 +10,11 @@ import ProductForm from './pages/admin/products/ProductForm';
 import LeadsPage from './pages/admin/LeadsPage';
 import GalleryPage from './pages/admin/GalleryPage';
 import TestimonialsPage from './pages/admin/TestimonialsPage';
+import BrandsPage from './pages/admin/BrandsPage';
+import TrustBarPage from './pages/admin/TrustBarPage';
+import HowItWorksPage from './pages/admin/HowItWorksPage';
+import SettingsPage from './pages/admin/SettingsPage';
+import AppearancePage from './pages/admin/AppearancePage';
 import { AuthProvider } from './contexts/AuthContext';
 import App from './App.tsx';
 import Home from './pages/Home';
@@ -270,6 +275,11 @@ const router = createBrowserRouter([
       { path: "leads", element: <LeadsPage /> },
       { path: "gallery", element: <GalleryPage /> },
       { path: "testimonials", element: <TestimonialsPage /> },
+      { path: "brands", element: <BrandsPage /> },
+      { path: "trust-bar", element: <TrustBarPage /> },
+      { path: "how-it-works", element: <HowItWorksPage /> },
+      { path: "settings", element: <SettingsPage /> },
+      { path: "appearance/:pageKey", element: <AppearancePage /> },
     ]
   }
 ]);

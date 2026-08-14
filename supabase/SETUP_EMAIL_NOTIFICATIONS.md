@@ -1,13 +1,13 @@
 # Email Notification Setup
 
-This explains how to activate automatic email alerts to admin@coppolahome.ca every time someone submits a contact or quote form.
+This explains how to activate automatic email alerts to info@coppolahome.ca every time someone submits a contact or quote form.
 
 ## How it works
 
 1. Customer submits a form → saved to the database
 2. Supabase detects the new row → triggers the Edge Function
 3. Edge Function sends a formatted email via Resend API
-4. You receive the email at admin@coppolahome.ca within seconds
+4. You receive the email at info@coppolahome.ca within seconds
 
 ---
 
